@@ -52,6 +52,8 @@ local function on_reload()
 	if config.enabled == false then return end
 
 	import 'reload.lua'
+	-- Reimport the run parameters file
+	import 'RunParameters.lua'
 end
 
 -- this allows us to limit certain functions to not be reloaded.

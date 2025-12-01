@@ -8,341 +8,17 @@
 ------------------------------------------------------------------------------------------------------------------------
 
 -- @improvements:
--- Redo whole run, check everything is similar
--- set position of ennemies/cocoons in all the Biome 1 (except arty) as a proof of concept
--- pusher le code sur le github de jamingu
 
 -- @finish foolish run:
 -- handle world shop between biome
 -- handle oceanus then the rest
 
-
 -- @later:
 -- unrandomise gathering spots and location
 -- unrandomise location pot of gold
--- unrandomise enemies gold death
+-- unrandomise enemies gold on death
 -- unrandomise cocoons content except the reward (ennemy, explode, money)
-
-
-
--- Defined run parameters (room layouts, encounters,...)
-local RunParameters = {
-	Biomes = {
-		F = {
-			Rooms = {
-				{
-					{
-						Name = 'F_Opening03',
-						Encounter = 'OpeningGeneratedF',
-						-- No forced God to allow other aspects to run with their preferred setup
-						--Reward = 'Boon',
-						--BoonGod = 'Zeus',
-						Traits = {
-							{
-								{ Name = 'Special', Rarity = 'Epic' },
-								{ Name = 'Sprint', Rarity = 'Common' },
-								{ Name = 'Mana', Rarity = 'Rare' },
-							}
-						},
-						SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Mage', Count = 1, SpawnOnIdKeys = {1} },
-									{ Name = 'Brawler', Count = 2, SpawnOnIdKeys = {2,3} },
-								}
-							}
-						}
-					}
-				},
-				{
-					{
-						Name = 'F_Combat03',
-						Reward = 'MetaCardPointsCommonDrop',
-						SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 2 },
-									{ Name = 'Mage', Count = 3 },
-								},
-								SpawnOrder = {'Mage', 'Mage', 'Mage', 'Brawler', 'Brawler'}
-							}
-						}
-					}
-				},
-				{
-					{
-						Name = 'F_Combat10',
-						Reward = 'Boon',
-						BoonGod = 'Hestia',
-						Traits = {
-							{
-								{ Name = 'Sprint', Rarity = 'Common' },
-								{ Name = 'CastProjectile', Rarity = 'Common' },
-								{ Name = 'FireballManaSpecial', Rarity = 'Rare' },
-							},
-							{
-								{ Name = 'Weapon', Rarity = 'Common' },
-								{ Name = 'Cast', Rarity = 'Common' },
-								{ Name = 'BurnExplode', Rarity = 'Common' },
-							},
-						},
-						SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Radiator', Count = 7 },
-								},
-							},
-							{
-								Spawns = {
-									{ Name = 'Mage',     Count = 2 },
-									{ Name = 'Radiator', Count = 3 },
-								},
-								SpawnOrder = {'Mage', 'Mage', 'Radiator', 'Radiator', 'Radiator' }
-							}
-						}
-					},
-					{
-						Name = 'F_Combat10',
-						Reward = 'StackUpgrade'
-					},
-				},
-				{
-					{
-						Name = 'F_Combat21',
-						Reward = 'RoomMoneyDrop',
-						GoldPots = {Count = 2},
-						SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Mage', Count = 5 },
-								}
-							},
-							{
-								Spawns = {
-									{ Name = 'Mage',     Count = 2 },
-									{ Name = 'Radiator', Count = 3 },
-								}
-							}
-						}
-					}
-				},
-				{
-					{
-						Name = 'F_Combat10',
-						Reward = 'MetaCardPointsCommonDrop'
-					},
-					{
-						Name = 'F_Combat05',
-						Encounter = 'ArachneCombatF',
-						Reward = 'GiftDrop',
-						Cocoons = {
-							{Name = 'Small', SpawnOnIdKey = 1},
-							{Name = 'Small', SpawnOnIdKey = 2},
-							{Name = 'Small', SpawnOnIdKey = 3},
-							{Name = 'Small', SpawnOnIdKey = 4},
-							{Name = 'Medium', SpawnOnIdKey = 5},
-							{Name = 'Medium', SpawnOnIdKey = 6},
-							{Name = 'Large', SpawnOnIdKey = 7},
-							{Name = 'Large', SpawnOnIdKey = 8}
-						},
-						IsForcedWell = true,
-						WellContent = {
-							{
-								{Name = 'TemporaryHealExpirationTrait', Type = 'Trait'},
-								{Name = 'TemporaryEmptySlotDamageTrait', Type = 'Trait'},
-								{Name = 'TemporaryForcedSecretDoorTrait', Type = 'Trait'},
-							}
-						},
-						WellSpawnOnIdKey = 2
-					}
-				},
-				{
-					{
-						Name = 'F_MiniBoss03',
-						IsFlipped = true,
-						Reward = 'Boon', --Room right reward is Demeter
-						BoonGod = 'Hera',
-						GoldPots = {Count = 1},
-						Traits = {
-							{
-								{ Name = 'Cast', Rarity = 'Epic' },
-								{ Name = 'Sprint', Rarity = 'Rare' },
-								{ Name = 'DamageShareRetaliate', Rarity = 'Rare' },
-							},
-							{
-								{ Name = 'Attack', Rarity = 'Rare' },
-								{ Name = 'Sprint', Rarity = 'Epic' },
-								{ Name = 'OmegaHeraProjectile', Rarity = 'Rare' },
-							},
-						},
-					},
-					{
-						Name = 'F_MiniBoss03',
-						Reward = 'Boon',
-						BoonGod = 'Demeter',
-					},
-				},
-				{
-					{
-						Name = 'F_Combat16',
-						Encounter = 'ArtemisCombatF',
-						Reward = 'MaxManaDrop',
-						GoldPots = {Count = 1},
-						ArtemisTraits = {
-							{
-								{ Name = 'DashOmegaBuff', Rarity = 'Common' },
-								{ Name = 'FocusCrit', Rarity = 'Common' },
-								{ Name = 'CritBonus', Rarity = 'Common' },
-							},
-							{
-								{ Name = 'CritBonus', Rarity = 'Common' },
-								{ Name = 'HighHealthCrit', Rarity = 'Rare' },
-								{ Name = 'TimedCritVulnerability', Rarity = 'Common' },
-							},
-						},
-						SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 4 },
-								},
-								SpawnOrder = {'Brawler', 'Brawler', 'Brawler', 'Brawler'}
-							},
-							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 1 },
-									{ Name = 'Mage_Elite',  Count = 1 },
-								},
-								SpawnOrder = {'Brawler', 'Mage_Elite'}
-							},
-							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 1 },
-									{ Name = 'SiegeVine',  Count = 2 },
-								},
-								SpawnOrder = {'Brawler', 'SiegeVine', 'SiegeVine'}
-							},
-							{
-								Spawns = {
-									{ Name = 'Mage_Elite',  Count = 3 },
-									{ Name = 'Brawler',  Count = 3 },
-								},
-								SpawnOrder = {'Brawler', 'Mage_Elite',  'Mage_Elite', 'Brawler', 'Mage_Elite', 'Brawler'}
-							},
-						}
-					}
-				},
-				{
-					{
-						Name = 'F_Shop01',
-						IsNemesisForced = false,
-						IsZagreusForced = true,
-						ShopContent = {
-							{
-								Reward = 'Boon',
-								BoonGod = 'Hephaestus',
-							},
-							{
-								Reward = 'Hammer',
-								-- @todo switch back when not doing Medea
-								--Traits = { 'LobPulseAmmoCollectTrait', 'LobOneSideTrait', 'LobGrowthTrait'}
-								Traits = { 'TorchDiscountExAttackTrait', 'TorchExSpecialCountTrait', 'TorchSpecialSpeedTrait'},
-							},
-							{
-								Reward = 'RandomPom',
-							}
-						}
-					},
-					{
-						Name = 'F_Combat02',
-						Reward = 'MetaCardPointsCommonDrop'
-					},
-				},
-				{
-					{
-						Name = 'F_Reprieve01',
-						Reward = 'StackUpgrade',
-					},
-					{
-						Name = 'F_Reprieve01',
-						Reward = 'MaxManaDrop',
-					}
-				},
-				{
-					{
-						Name = 'F_Story01',
-						Traits = { 'HighArmorCostume', 'EscalatingCostume', 'VitalityCostume'},
-					},
-					{
-						Name = 'F_Combat02',
-						Reward = 'Selene',
-					},
-				},
-				{
-					{
-						Name = 'F_Combat14',
-						Reward = 'MaxHealthDrop',
-					},
-					{
-						Name = 'F_Combat14', -- room left reward is heart
-						Reward = 'RoomMoneyDrop',
-						SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Mage_Elite', Count = 5 },
-									{ Name = 'Radiator',   Count = 1 },
-									{ Name = 'Screamer',   Count = 5 },
-								}
-							}
-						},
-						IsForcedWell = true,
-						WellSpawnOnIdKey = 1, -- @todo: final room before shop, well at the middle left
-					}
-				},
-				{
-					{
-						Name = 'F_PreBoss01',
-						IsZagreusForced = false,
-						IsNemesisForced = false,
-						ShopContent = {
-							{
-								Reward = 'Boon',
-								BoonGod = 'Hestia',
-								Traits = {
-									{
-										{ Name = 'Sprint', Rarity = 'Common' },
-										{ Name = 'AloneDamage', Rarity = 'Epic' },
-										{ Name = 'FireballManaSpecial', Rarity = 'Common' },
-									},
-								},
-							},
-							{
-								Reward = 'HealDropMajor',
-							},
-							{
-								Reward = 'MaxManaDrop',
-							}
-						}
-					},
-					{
-						Name = 'F_PreBoss01',
-						Reward = 'Boon',
-						BoonGod = 'Hermes',
-					},
-				},
-				{
-					{
-						Name = 'F_Boss01',
-						BossName = 'Hecate',
-						BossAttack = 'HecateMeteorShower',
-					}
-				},
-			}
-		},
-		--@todo: dont forget to put IsNemesisForced/IsZagreusForced= false in shop as it may be globally set true before
-		H = {
-		}
-	},
-};
+-- Nyx apperance in chaos (via Empty_Chaos GameRequirements)
 
 function generateForcedStartingRoom( currentRun, args )
 	--Force the generation of the Opening/Intro room
@@ -352,13 +28,18 @@ function generateForcedStartingRoom( currentRun, args )
 	return startingRoom
 end
 
-function generateForcedRoomReward(currentRun, args, otherDoors)
+function generateForcedRoom(currentRun, args, otherDoors)
 	if currentRun and currentRun.CurrentRoom then
 		local currentBiomeName = _getBiomeName(currentRun.CurrentRoom)
 		local currentRoomName = currentRun.CurrentRoom.Name
 
-		-- Find the next room
-		local nextRoom = _getRunParametersNextRoom(currentBiomeName, currentRoomName)
+		local nextRoom
+		if args and args.ForceNextRoomSet and args.ForceNextRoomSet == 'Chaos' then
+			nextRoom = _getRunParametersNextChaosRoom(currentBiomeName, currentRoomName)
+		else
+			nextRoom = _getRunParametersNextRoom(currentBiomeName, currentRoomName)
+		end
+
 		if nextRoom then
 			return _createRoomData(nextRoom)
 		end
@@ -373,6 +54,7 @@ function generateForcedShopOptions(args)
 
 	if CurrentRun and CurrentRun.CurrentRoom then
 		local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+		
 		if currentRoom then
 			if currentRoom.ShopContent then
 				shopOptions = {}
@@ -436,16 +118,10 @@ function generateForcedShopOptions(args)
 end
 
 function generateForcedEncounterData(currentRun, room, args)
-	local currentBiomeName
-	if currentRun and currentRun.CurrentRoom then
-		currentBiomeName = _getBiomeName(currentRun.CurrentRoom)
-	else
-		currentBiomeName = 'F' -- No current run, pick the starting Biome
-	end
-
 	local currentRoom = _getRunParametersForRoom(room)
 
 	if currentRoom then
+		local currentBiomeName = _getBiomeName(currentRoom)
 		if string.find(currentRoom.Name, '_Combat') or string.find(currentRoom.Name, '_Opening') then
 			local encounterName
 			if currentRoom.Encounter then
@@ -515,6 +191,8 @@ function generateForcedRewardTraits( lootData, args )
 		upgradeOptions = generateForcedHammerRewardTraits()
 	elseif lootData.SpeakerName == 'Artemis' then
 		upgradeOptions = generateForcedBoonRewardTraits(lootData)
+	elseif lootData.Name == 'TrialUpgrade' then
+		upgradeOptions = generateForcedChaosTraits()
 	end
 
 	if upgradeOptions then
@@ -618,6 +296,60 @@ function generateForcedHammerRewardTraits()
 	end
 end
 
+function generateForcedChaosTraits()
+	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+
+	local forcedTraits = nil
+	if currentRoom and currentRoom.Traits then
+		forcedTraits = table.remove(currentRoom.Traits,1)
+	end
+
+	if forcedTraits ~= nil then
+		local upgradeOptions = {}
+		for k,trait in pairs(forcedTraits) do
+			if trait.BlessingName == 'Attack' then
+				trait.BlessingName = 'Weapon'
+			end
+
+			local blessingName = 'Chaos'..trait.BlessingName..'Blessing'
+			local curseName = 'Chaos'..trait.CurseName..'Curse'
+			table.insert(upgradeOptions, {
+				Type = 'TransformingTrait',
+				ItemName = blessingName,
+				Rarity = trait.Rarity,
+				SecondaryItemName = curseName
+			})
+
+			-- Also set the blessing/curse values and duration in the global variables
+			-- @todo: handle every blessing/curse + handle reverting the modification after, because those values are set in stone for the whole run (eg: rerolling keeps the values )
+
+			-- Blessings values
+			if blessingName == 'ChaosWeaponBlessing' then
+				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin = tonumber(trait.BlessingValue)
+				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMax = TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin
+			elseif blessingName == 'ChaosManaBlessing' then
+				TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMin = tonumber(trait.BlessingValue)
+				TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMax = TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMin
+			elseif blessingName == 'ChaosCastBlessing' then
+				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin = tonumber(trait.BlessingValue)
+				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMax = TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin
+			end
+
+			-- Curses values and duration
+			if curseName == 'ChaosSecondaryAttackCurse' then
+				TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMin = trait.CurseValue
+				TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMax = TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMin
+			end
+
+			-- Duration
+			TraitSetData.Chaos[curseName].RemainingUses.BaseMin = trait.Duration
+			TraitSetData.Chaos[curseName].RemainingUses.BaseMax = TraitSetData.Chaos[curseName].RemainingUses.BaseMin
+		end
+
+		return upgradeOptions
+	end
+end
+
 function forcedStartRoom(currentRun, currentRoom)
 	local currentRoom = _getRunParametersForRoom(currentRoom)
 
@@ -636,11 +368,13 @@ function forcedStartRoom(currentRun, currentRoom)
 
 	-- Force gold pots
 	local goldPotsCount = 0
-	if currentRoom.GoldPots and currentRoom.GoldPots.Count then
+	if currentRoom and currentRoom.GoldPots and currentRoom.GoldPots.Count then
 		goldPotsCount = currentRoom.GoldPots.Count
 	end
-	RoomData[currentRoom.Name].BreakableValueOptions = { MaxHighValueBreakables = goldPotsCount }
-	RoomData[currentRoom.Name].BreakableHighValueChanceMultiplier = 100.0
+	if currentRoom then
+		RoomData[currentRoom.Name].BreakableValueOptions = { MaxHighValueBreakables = goldPotsCount }
+		RoomData[currentRoom.Name].BreakableHighValueChanceMultiplier = 100.0
+	end
 end
 
 function getForcedRoomRewards(run, room)
@@ -655,9 +389,12 @@ function _createRoomData(roomParameters)
 		-- Retrieve the default RoomData
 		local createdRoomData = RoomData[roomParameters.Name]
 
-		-- Remove Chaos chance
-		-- @todo: handle Chaos chance
-		createdRoomData.SecretSpawnChance = 0
+		-- Handle Chaos chance
+		if roomParameters.IsForcedChaos then
+			createdRoomData.SecretSpawnChance = 1
+		else
+			createdRoomData.SecretSpawnChance = 0
+		end
 
 		-- Handle Well chance
 		if roomParameters.IsForcedWell then
@@ -721,38 +458,83 @@ function _getRunParametersForRoom(room)
 	local roomName = room.Name
 	local biomeName = room.RoomSetName
 
-	for k, rooms in pairs(RunParameters.Biomes[biomeName].Rooms) do
-		for k2, roomParameters in pairs(rooms) do
-			if roomParameters and roomParameters.Name == roomName then
-				-- Biome+RoomName+RoomReward exists and match, return the room
-				if room.ForcedReward and room.ForcedReward.Name == roomParameters.Reward then
-					return roomParameters
-				elseif #rooms == 1 then
-					-- Biome+RoomName match and this is the only room, return the room
-					return roomParameters
+	if biomeName == 'Chaos' then
+		-- Check in all ChaosRooms
+		for k, biomeParameters in pairs(RunParameters.Biomes) do
+			if biomeParameters.ChaosRooms then
+				for k2, roomParameters in pairs(biomeParameters.ChaosRooms) do
+					if roomParameters and roomParameters.Name == roomName then
+						return roomParameters
+					end
+				end
+			end
+		end
+	else
+		-- Check in Rooms
+		if RunParameters.Biomes[biomeName] then
+			for k, rooms in pairs(RunParameters.Biomes[biomeName].Rooms) do
+				for k2, roomParameters in pairs(rooms) do
+					if roomParameters and roomParameters.Name == roomName then
+						-- Biome+RoomName+RoomReward exists and match, return the room
+						if room.ForcedReward and room.ForcedReward.Name == roomParameters.Reward then
+							return roomParameters
+						elseif room.ChosenRewardType == 'Shop' and  string.find(roomName, '_PreBoss') then
+							return roomParameters
+						elseif #rooms == 1 then
+							-- Biome+RoomName match and this is the only room, return the room
+							return roomParameters
+						end
+					end
 				end
 			end
 		end
 	end
+
+	
 
 	return nil
 end
 
 function _getRunParametersStartingRoom()
 	--@todo handle not F starting Biome
-	RunParameters.Biomes['F'].Rooms[1][1].IsGenerated = true
-	return RunParameters.Biomes['F'].Rooms[1][1]
+
+	-- @todo: revert here to F after finished
+	RunParameters.Biomes['G'].Rooms[1][1].IsGenerated = true
+	return RunParameters.Biomes['G'].Rooms[1][1]
 end
 
 function _getRunParametersNextRoom(biomeName, roomName)
-	for k, rooms in pairs(RunParameters.Biomes[biomeName].Rooms) do
-		for k2, room in pairs(rooms) do
-			if room and room.Name == roomName then
-				for k3, nextRoom in pairs(RunParameters.Biomes[biomeName].Rooms[k+1]) do
-					-- Add a property to indicate this room has been generated
-					if not nextRoom.IsGenerated then
-						RunParameters.Biomes[biomeName].Rooms[k+1][k3].IsGenerated = true
-						return nextRoom
+	if biomeName == 'Chaos' then
+		-- Handle specific Chaos Biome, find the last ChaosRoom with this name that has been generated
+		for tmpBiomeName, biomeParameters in pairs(RunParameters.Biomes) do
+			if biomeParameters.ChaosRooms then 
+				for k, chaosRoom in pairs(biomeParameters.ChaosRooms) do
+					if chaosRoom.Name == roomName then
+
+						-- For each Rooms of the same biome, return the first not generated Room
+						for k2, rooms in pairs(biomeParameters.Rooms) do
+							for k3, nextRoom in pairs(rooms) do
+								if not nextRoom.IsGenerated then
+									RunParameters.Biomes[tmpBiomeName].Rooms[k2][k3].IsGenerated = true
+									return nextRoom
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	else
+		-- Regular Rooms
+		for k, rooms in pairs(RunParameters.Biomes[biomeName].Rooms) do
+			for k2, room in pairs(rooms) do
+				if room and room.Name == roomName then
+					for k3, nextRoom in pairs(RunParameters.Biomes[biomeName].Rooms[k+1]) do
+						-- Add a property to indicate this room has been generated
+						if not nextRoom.IsGenerated then
+							RunParameters.Biomes[biomeName].Rooms[k+1][k3].IsGenerated = true
+							return nextRoom
+						end
 					end
 				end
 			end
@@ -762,8 +544,27 @@ function _getRunParametersNextRoom(biomeName, roomName)
 	return nil
 end
 
+function _getRunParametersNextChaosRoom(biomeName, roomName)
+	if RunParameters.Biomes[biomeName].ChaosRooms then
+		for k, room in pairs(RunParameters.Biomes[biomeName].ChaosRooms) do
+			if not room.IsGenerated then
+				RunParameters.Biomes[biomeName].ChaosRooms[k].IsGenerated = true
+				local nextChaosRoom = RunParameters.Biomes[biomeName].ChaosRooms[k]
+
+				return nextChaosRoom
+			end
+		end
+	end
+
+	return nil
+end
+
 function _getBiomeName(currentRoom)
-	return string.sub(currentRoom.Name, 0, 1)
+	if string.find(currentRoom.Name, 'Chaos') then
+		return 'Chaos'
+	else
+		return string.sub(currentRoom.Name, 0, 1)
+	end
 end
 
 --------------------------------------------------------------
@@ -1140,16 +941,12 @@ function MyHandleBreakableSwap( currentRoom, args )
 	CurrentRun.CurrentRoom.HighValueBreakableIds = {}
 	--@modified = loop start a 1 to generate N pot of gold instead of N+1
 	for index = 1, highValueLimit, 1 do
-		rom.log.warning('highValueLimit '..highValueLimit)
-		rom.log.warning('breakable '..index)
 		local breakable = RemoveRandomValue( legalBreakables )
 		if breakable == nil then
 			return
 		end
 		local valueOptions = breakable.BreakableValueOptions
 		for k, swapOption in ipairs( valueOptions ) do
-			rom.log.warning('-2-breakable '..k)
-			rom.log.warning(swapOption)
 			if swapOption.GameStateRequirements == nil or IsGameStateEligible( swapOption, swapOption.GameStateRequirements ) then
 				if RandomChance( swapOption.Chance * chanceMultiplier ) then
 					if swapOption.Animation ~= nil then
