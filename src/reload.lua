@@ -8,6 +8,7 @@
 ------------------------------------------------------------------------------------------------------------------------
 
 -- @improvements:
+-- rwaerds as a list, to allow rerolling door offers. Big impact on the current code
 
 -- @finish foolish run:
 -- handle world shop between biome
@@ -19,6 +20,10 @@
 -- unrandomise enemies gold on death
 -- unrandomise cocoons content except the reward (ennemy, explode, money)
 -- Nyx apperance in chaos (via Empty_Chaos GameRequirements)
+-- Forced Devotion Gods
+-- In oceanus, unrandomise hidden doors reward after clearing a wave
+-- Handle every Chaos curse/bless
+-- Handle surface runs
 
 function generateForcedStartingRoom( currentRun, args )
 	--Force the generation of the Opening/Intro room
@@ -90,6 +95,12 @@ function generateForcedShopOptions(args)
 							Name = 'HealDropMajor',
 							Type = 'Consumable',
 							CostOverride = 50
+						}
+					elseif shopContent.Reward == 'RandomBoon' then
+						shopOption = {
+							Name = 'BlindBoxLoot',
+							Type = 'Consumable',
+							ForceLootName = shopContent.BoonGod..'Upgrade',
 						}
 					else
 						shopOption = {
@@ -218,7 +229,16 @@ function generateForcedBoonRewardTraits(lootData)
 	elseif currentRoom and currentRoom.ShopContent then
 		-- Shop option
 		for k, shopElement in pairs(currentRoom.ShopContent) do
+			-- Regular Boon
 			if shopElement.Reward == 'Boon' and shopElement.BoonGod == speakerName then
+				if currentRoom.ShopContent[k].Traits and currentRoom.ShopContent[k].Traits[1] then
+					forcedTraits = table.remove(currentRoom.ShopContent[k].Traits, 1)
+					break
+				end
+			end
+
+			-- Random Boon
+			if shopElement.Reward == 'RandomBoon' and shopElement.BoonGod == speakerName then
 				if currentRoom.ShopContent[k].Traits and currentRoom.ShopContent[k].Traits[1] then
 					forcedTraits = table.remove(currentRoom.ShopContent[k].Traits, 1)
 					break
@@ -350,8 +370,8 @@ function generateForcedChaosTraits()
 	end
 end
 
-function forcedStartRoom(currentRun, currentRoom)
-	local currentRoom = _getRunParametersForRoom(currentRoom)
+function forcedStartRoom(currentRun, startRoom)
+	local currentRoom = _getRunParametersForRoom(startRoom)
 
 	-- Force well position
 	if currentRoom and currentRoom.WellSpawnOnIdKey then
@@ -361,9 +381,12 @@ function forcedStartRoom(currentRun, currentRoom)
 		end
 	end
 
-	-- Force Boss attack
-	if currentRoom and currentRoom.BossName == 'Hecate' and currentRoom.BossAttack then
-		UnitSetData[currentRoom.BossName][currentRoom.BossName].AIStages[2].MidPhaseWeapons = {currentRoom.BossAttack}
+	-- Force Boss patterns
+	if currentRoom then
+		if currentRoom.BossName == 'Hecate' and currentRoom.BossParameter then
+			UnitSetData[currentRoom.BossName][currentRoom.BossName].AIStages[2].MidPhaseWeapons = {currentRoom.BossParameter}
+		end
+		--Scylla fight logic is set in MyApplyScyllaFightSpotlight
 	end
 
 	-- Force gold pots
@@ -384,7 +407,7 @@ end
 function _createRoomData(roomParameters)
 	if roomParameters then
 		-- Ensure the room is generated only once
-		roomParameters.Generated = true
+		roomParameters.IsGenerated = true
 
 		-- Retrieve the default RoomData
 		local createdRoomData = RoomData[roomParameters.Name]
@@ -429,6 +452,15 @@ function _createRoomData(roomParameters)
 			createdRoomData.ForcedRewards = {
 				{
 					Name = 'WeaponUpgrade',
+				},
+			}
+		elseif roomParameters.Reward == 'Devotion' then
+			createdRoomData.ForcedRewards = {
+				{
+					--@todo this does not work to force the gods
+					Name = 'Devotion',
+					LootAName = roomParameters.LootAName .. 'Upgrade',
+					LootBName = roomParameters.LootBName .. 'Upgrade',
 				},
 			}
 		elseif roomParameters.Reward then
@@ -498,9 +530,8 @@ end
 function _getRunParametersStartingRoom()
 	--@todo handle not F starting Biome
 
-	-- @todo: revert here to F after finished
-	RunParameters.Biomes['G'].Rooms[1][1].IsGenerated = true
-	return RunParameters.Biomes['G'].Rooms[1][1]
+	RunParameters.Biomes['F'].Rooms[1][1].IsGenerated = true
+	return RunParameters.Biomes['F'].Rooms[1][1]
 end
 
 function _getRunParametersNextRoom(biomeName, roomName)
@@ -722,23 +753,6 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 				table.insert(newSpawnPointIds, shuffledSpawnPointIds[spawnOnIdKey])
 			end
 		end
-
-		-- Fill the rest of the values with the non manual spawn points
-		--@todo remove if useless 
-		--[[
-		for k, spawnPointId in pairs(shuffledSpawnPointIds) do
-			local found = false
-			for k2, newSpawnPointId in pairs(newSpawnPointIds) do
-				if spawnPointId == newSpawnPointId then
-					found = true
-					break
-				end
-			end
-				if not found then
-				table.insert(newSpawnPointIds, spawnPointId)
-			end
-		end
-		]]
 
 		shuffledSpawnPointIds = newSpawnPointIds
 	end
@@ -969,4 +983,99 @@ function MyHandleBreakableSwap( currentRoom, args )
 			end
 		end
 	end
+end
+
+function MyUnwrapRandomLoot(source)
+	local spawnId = source.ObjectId
+	AddInputBlock({ Name = "RandomLoot" })
+	RandomSynchronize()
+	InvalidateCheckpoint()
+	local obstacleId = SpawnObstacle({ Name = "InvisibleTarget", DestinationId = spawnId })
+
+	-- @modified, force the god
+	local tmpArgs = { SpawnPoint = obstacleId}
+	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	if currentRoom and currentRoom.ShopContent then
+		for k, shopOption in pairs(currentRoom.ShopContent) do
+			if shopOption.Reward == 'RandomBoon' then
+				tmpArgs = { SpawnPoint = obstacleId, ForceLootName = shopOption.BoonGod..'Upgrade' }
+				break
+			end
+		end
+	end
+	local reward = GiveLoot(tmpArgs)
+	
+	SetObstacleProperty({ Property = "MagnetismWhileBlocked", Value = 0, DestinationId = reward.ObjectId })
+
+	reward.BoughtFromShop = true
+	if source.BlockBoughtTextLines then
+		reward.BoughtTextLines = nil
+	end
+	reward.WasRandomLoot = true
+	reward.MakeUpTextLines = nil
+	UseableOff({ Id = reward.ObjectId })
+	UnwrapLootPresentation( reward )
+	Destroy({ Id = obstacleId })
+	wait(0.5)
+	UseableOn({ Id = reward.ObjectId })
+	SetInteractProperty({ DestinationId = reward.ObjectId, Property = "AutoActivate", Value = true })
+	SetInteractProperty({ DestinationId = reward.ObjectId, Property = "Distance", Value = 1000 })
+
+	RunWeaponMethod({ Id = CurrentRun.Hero.ObjectId, Weapon = "All", Method = "cancelCharge" })
+	RunWeaponMethod({ Id = CurrentRun.Hero.ObjectId, Weapon = "All", Method = "ForceControlRelease" })
+
+	RemoveInputBlock({ Name = "RandomLoot" })
+	HideUseButton( reward.ObjectId, reward, 0 )
+end
+
+function MyApplyScyllaFightSpotlight(scylla, args)
+	local encounter = CurrentRun.CurrentRoom.Encounter
+	if CurrentRun.CurrentRoom.Name ~= "G_Boss02" then
+		args.Flags.Charybdis = nil
+	end
+	local flagData = GetRandomValue(args.Flags)
+
+	if GameState.EncountersOccurredCache.BossScylla01 == 1 then
+		flagData = args.Flags.Keytarist
+	end
+	if CurrentRun.CurrentRoom.Name == "G_Boss02" and GameState.EncountersOccurredCache.BossScylla02 == 1 then
+		flagData = args.Flags.Charybdis
+	end
+
+	--@modified Force the Spotlight Siren
+	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	if currentRoom and currentRoom.BossParameter then
+		flagData = args.Flags[currentRoom.BossParameter]
+	end
+
+	flagData.Id = GetFirstValue(GetIdsByType({ Name = flagData.Name }))
+
+	encounter.ScyllaId = scylla.ObjectId
+
+	CreateAnimation({ Name = "StageSpotlight", DestinationId = flagData.Id, Group = "FX_Add_Top" })
+	CreateAnimation({ Name = "ScyllaBoostedFxSpawner", DestinationId = flagData.Id })
+	PlaySound({ Name = "/Leftovers/SFX/LightOn", flagData.Id })
+
+	if flagData.ApplyEffect ~= nil then
+		flagData.ApplyEffect.Id = scylla.ObjectId
+		flagData.ApplyEffect.DestinationId = flagData.Id
+		if flagData.ApplyEffect.DataProperties and not flagData.ApplyEffect.DataProperties.TimeModifierFraction then
+			flagData.ApplyEffect.DataProperties.TimeModifierFraction = 1
+		end
+		ApplyEffect(flagData.ApplyEffect)
+	end
+
+	if ActiveEnemies[flagData.Id] ~= nil then
+		ActiveEnemies[flagData.Id].SpotlightFlag = flagData
+
+		if args.UnequipWeapons then
+			RemoveAllValues(ActiveEnemies[flagData.Id].WeaponOptions, args.UnequipWeapons)
+			DebugPrintTable(ActiveEnemies[flagData.Id].WeaponOptions)
+		end
+	end
+	MapState.SpotlightUnitId = flagData.Id
+
+	thread( SetMapFlag, flagData)
+
+	thread( ScyllaSpotlightPresentation, flagData, scylla )
 end

@@ -311,7 +311,7 @@ RunParameters = {
 					{
 						Name = 'F_Boss01',
 						BossName = 'Hecate',
-						BossAttack = 'HecateMeteorShower',
+						BossParameter = 'HecateMeteorShower',
 					}
 				},
                 {
@@ -339,13 +339,11 @@ RunParameters = {
 				},
 			}
 		},
-		--@todo: dont forget to put IsNemesisForced/IsZagreusForced= false in shop as it may be globally set true before
         ---------------------
         --- Biome G (Oceanus)
         ---------------------
 		G = {
             Rooms = {
-				--[[
                 {
 					{
 						Name = 'G_Intro',
@@ -373,12 +371,12 @@ RunParameters = {
 						}
 					}
 				},
-				]]
+				
 				{
-					--[[{
+					{
 						Name = 'G_Combat01',
 						Reward = 'MetaCurrencyDrop',
-					},]]
+					},
 					{
 						Name = 'G_Shop01',
 						IsNemesisForced = false,
@@ -402,22 +400,12 @@ RunParameters = {
 					{
 						Name = 'G_MiniBoss03',
 						Reward = 'Boon',
-						BoonGod = 'Poseidon',
-					},
-					{
-						Name = 'G_MiniBoss01',
-						Reward = 'Boon',
-						BoonGod = 'Hestia',
-					},
-					{
-						Name = 'G_MiniBoss02',
-						Reward = 'Boon',
-						BoonGod = 'Hera', --@todo force reroll in Hera
+						BoonGod = 'Hera',
 						Traits = {
 							{
 								{ Name = 'Sprint', Rarity = 'Common' },
 								{ Name = 'ElementalRarityUpgrade' },
-								{ Name = 'DamageSharePotency', Rarity = 'Rare' },
+								{ Name = 'DamageShareRetaliate', Rarity = 'Rare' },
 							},
 							{
 								{ Name = 'Cast', Rarity = 'Rare' },
@@ -426,31 +414,34 @@ RunParameters = {
 							},
 						},
 					},
+					{
+						Name = 'G_MiniBoss01',
+						Reward = 'Boon',
+						BoonGod = 'Hestia',
+					},
 				},
 				{
-					{
-						Name = 'G_Combat20',
-						Reward = 'MetaCurrencyBigDrop',
-						Encounter = 'NemesisCombatG',
-						
-					},
 					{
 						Name = 'G_Combat20',
 						Reward = 'MetaCardPointsCommonBigDrop',
 						Encounter = 'NemesisCombatG',
-						
+					},
+					{
+						Name = 'G_Combat20',
+						Reward = 'MetaCurrencyBigDrop',
+						Encounter = 'NemesisCombatG',
 					},
 				},
 				{
+					{
+						Name = 'G_Combat16',
+						Reward = 'MaxHealthDrop',
+					},
 					{
 						Name = 'G_Combat16',
 						Reward = 'Boon',
 						BoonGod = 'Poseidon',
 						
-					},
-					{
-						Name = 'G_Combat16',
-						Reward = 'MaxHealthDrop',
 					},
 					{
 						Name = 'G_Combat16',
@@ -471,17 +462,19 @@ RunParameters = {
 				{
 					{
 						Name = 'G_Combat02',
-						Reward = 'Duo hestia/zeus',
-						--BoonGod = 'Poseidon',
+						Reward = 'Devotion',
+						LootAName = 'Hestia',
+						LootBName = 'Zeus'
 					},
 					{
 						Name = 'G_Combat02',
 						Reward = 'RoomMoneyDrop',
+						IsFlipped = true,
 						SpawnWaves = {
 							{
 								Spawns = {
-									{ Name = 'FishSwarmerSquad_Elite', Count = 12, SpawnOnIdKeys = {1,2,3,4,5,6,7,8,9,10,11,12} },
-									{ Name = 'Turtle_Elite', Count = 3, SpawnOnIdKeys = {13,14,15} },
+									{ Name = 'FishSwarmerSquad_Elite', Count = 6, SpawnOnIdKeys = {1,2,3} },
+									{ Name = 'Turtle_Elite', Count = 3, SpawnOnIdKeys = {5,6,7} },
 								}
 							}
 						}
@@ -489,28 +482,36 @@ RunParameters = {
 				},
 				{
 					{
-						Name = 'G_PreBoss01', --@todo: only one the room exits appear after ending the waves
+						Name = 'G_Intro',
+						Encounter = 'Empty',
+						IsForcedChaos = true,
+					}
+				},
+
+				{
+					{
+						Name = 'G_PreBoss01',
 						IsZagreusForced = false,
 						IsNemesisForced = false,
+						IsFlipped = true,
 						ShopContent = {
 							{
-								--@todo: handle Random sack, it is poseidon
-								Reward = 'Boon',
-								BoonGod = 'Hestia',
-								Traits = {
-									{
-										{ Name = 'Sprint', Rarity = 'Common' },
-										{ Name = 'AloneDamage', Rarity = 'Epic' },
-										{ Name = 'FireballManaSpecial', Rarity = 'Common' },
-									},
-								},
+								Reward = 'HealDropMajor',
 							},
 							{
 								Reward = 'RandomPom',
 							},
 							{
-								Reward = 'MaxHealthDrop',
-							}
+								Reward = 'RandomBoon',
+								BoonGod = 'Poseidon',
+								Traits = {
+									{
+										{ Name = 'Cast', Rarity = 'Epic' },
+										{ Name = 'RoomRewardBonus', Rarity = 'Common' },
+										{ Name = 'OmegaPoseidonProjectile', Rarity = 'Epic' },
+									},
+								},
+							},
 						}
 					},
 					{
@@ -521,16 +522,14 @@ RunParameters = {
 					{
 						Name = 'G_PreBoss01',
 						Reward = 'Boon',
-						BoonGod = 'Hermes',
+						BoonGod = 'Hestia',
 					},
 				},
 				{
 					{
 						Name = 'G_Boss01',
-						-- @todo: scylla is the artist in P2
-						BossName = '???',
-						--BossAttack = 'HecateMeteorShower',
-						
+						BossName = 'Scylla',
+						BossParameter = 'Scylla',
 					}
 				}
             },

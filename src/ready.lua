@@ -113,3 +113,13 @@ end)
 modutil.mod.Path.Wrap("HandleBreakableSwap", function(base, ...)
 	return MyHandleBreakableSwap(...)
 end)
+
+-- Force Random Boon sack
+modutil.mod.Path.Wrap("UnwrapRandomLoot", function(base, source)
+	return MyUnwrapRandomLoot(source)
+end)
+
+-- Force Siren spotlight
+modutil.mod.Path.Wrap("ApplyScyllaFightSpotlight", function(base, scylla, args)
+	return MyApplyScyllaFightSpotlight(scylla, args)
+end)
