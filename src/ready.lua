@@ -4,7 +4,7 @@
 
 -- Choose the next room (layout, boons, etc.)
 modutil.mod.Path.Wrap("ChooseNextRoomData", function(base, ...)
-	local forcedRoom = generateForcedRoom(...)
+	local forcedRoom = generateForcedNextRoomData(...)
 	if forcedRoom ~= nil then
 		return forcedRoom
 	else
@@ -16,7 +16,7 @@ end)
 modutil.mod.Path.Wrap("ChooseRoomReward", function(base, run, room, rewardStoreName, previouslyChosenRewards, args)
 	local forcedRoomRewards = getForcedRoomRewards(run, room)
 
-	if forcedRoomRewards then
+	if args and forcedRoomRewards then
 		args.ForcedRewards = forcedRoomRewards
 	end
 

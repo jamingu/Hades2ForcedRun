@@ -7,14 +7,13 @@
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
--- @improvements:
--- rwaerds as a list, to allow rerolling door offers. Big impact on the current code
-
 -- @finish foolish run:
--- handle world shop between biome
--- handle oceanus then the rest
+-- 
+-- handle Fields then the rest
+-- Handle Tartarus
 
 -- @later:
+-- rewards as a list, to allow rerolling door offers. Big impact on the current code
 -- unrandomise gathering spots and location
 -- unrandomise location pot of gold
 -- unrandomise enemies gold on death
@@ -24,16 +23,17 @@
 -- In oceanus, unrandomise hidden doors reward after clearing a wave
 -- Handle every Chaos curse/bless
 -- Handle surface runs
+-- unrandomise the purging altar in inter-biome
 
 function generateForcedStartingRoom( currentRun, args )
-	--Force the generation of the Opening/Intro room
+	--Force the generation of the Opening room
 	local startingRoomData = _createRoomData(_getRunParametersStartingRoom())
 
 	local startingRoom = CreateRoom( startingRoomData, args )
 	return startingRoom
 end
 
-function generateForcedRoom(currentRun, args, otherDoors)
+function generateForcedNextRoomData(currentRun, args, otherDoors)
 	if currentRun and currentRun.CurrentRoom then
 		local currentBiomeName = _getBiomeName(currentRun.CurrentRoom)
 		local currentRoomName = currentRun.CurrentRoom.Name
@@ -398,6 +398,13 @@ function forcedStartRoom(currentRun, startRoom)
 		RoomData[currentRoom.Name].BreakableValueOptions = { MaxHighValueBreakables = goldPotsCount }
 		RoomData[currentRoom.Name].BreakableHighValueChanceMultiplier = 100.0
 	end
+
+	-- Forced Dyonisus keepsake skip fight
+	if currentRoom and currentRoom.IsDynosisusKeepsakeForced then
+		TraitSetData.Keepsakes.SkipEncounterKeepsake.AcquireFunctionArgs.SkipEncounterChance = 1
+	else
+		TraitSetData.Keepsakes.SkipEncounterKeepsake.AcquireFunctionArgs.SkipEncounterChance = 0
+	end
 end
 
 function getForcedRoomRewards(run, room)
@@ -463,6 +470,12 @@ function _createRoomData(roomParameters)
 					LootBName = roomParameters.LootBName .. 'Upgrade',
 				},
 			}
+		elseif roomParameters.Reward == 'Pom' then
+			createdRoomData.ForcedRewards = {
+				{
+					Name = 'StackUpgrade',
+				},
+			}	
 		elseif roomParameters.Reward then
 			createdRoomData.ForcedRewards = {
 				{
@@ -530,18 +543,18 @@ end
 function _getRunParametersStartingRoom()
 	--@todo handle not F starting Biome
 
-	RunParameters.Biomes['F'].Rooms[1][1].IsGenerated = true
-	return RunParameters.Biomes['F'].Rooms[1][1]
+	local startingBiomeName = 'F'
+	RunParameters.Biomes[startingBiomeName].Rooms[1][1].IsGenerated = true
+	return RunParameters.Biomes[startingBiomeName].Rooms[1][1]
 end
 
-function _getRunParametersNextRoom(biomeName, roomName)
+function _geRunParametersNextRoom(biomeName, roomName)
 	if biomeName == 'Chaos' then
 		-- Handle specific Chaos Biome, find the last ChaosRoom with this name that has been generated
 		for tmpBiomeName, biomeParameters in pairs(RunParameters.Biomes) do
 			if biomeParameters.ChaosRooms then 
 				for k, chaosRoom in pairs(biomeParameters.ChaosRooms) do
 					if chaosRoom.Name == roomName then
-
 						-- For each Rooms of the same biome, return the first not generated Room
 						for k2, rooms in pairs(biomeParameters.Rooms) do
 							for k3, nextRoom in pairs(rooms) do
@@ -560,11 +573,23 @@ function _getRunParametersNextRoom(biomeName, roomName)
 		for k, rooms in pairs(RunParameters.Biomes[biomeName].Rooms) do
 			for k2, room in pairs(rooms) do
 				if room and room.Name == roomName then
-					for k3, nextRoom in pairs(RunParameters.Biomes[biomeName].Rooms[k+1]) do
-						-- Add a property to indicate this room has been generated
-						if not nextRoom.IsGenerated then
-							RunParameters.Biomes[biomeName].Rooms[k+1][k3].IsGenerated = true
-							return nextRoom
+					if string.find(roomName, '_PostBoss') then
+						--PostBoss room, return the next biome first room
+						local nextBiomeName = _getNextBiomeName(biomeName)
+						RunParameters.Biomes[nextBiomeName].Rooms[1][1].IsGenerated = true
+						return RunParameters.Biomes[nextBiomeName].Rooms[1][1]
+					else
+						for k3, nextRoom in pairs(RunParameters.Biomes[biomeName].Rooms[k+1]) do
+							-- Add a property to indicate this room has been generated
+							if not nextRoom.IsGenerated then
+								--RunParameters.Biomes[biomeName].Rooms[k+1][k3].IsGenerated = true
+								--RunParameters.Biomes[biomeName].Rooms[k+1][k3].UniqueId = biomeName .. '_' .. (k+1) .. '_' .. k3
+								nextRoom.IsGenerated = true
+								nextRoom.UniqueId = biomeName .. '---' .. (k+1) .. '---' .. k3
+								rom.log.warning('test 2')
+								rom.log.warning(RunParameters.Biomes[biomeName].Rooms[k+1][k3].UniqueId)
+								return nextRoom
+							end
 						end
 					end
 				end
@@ -595,6 +620,16 @@ function _getBiomeName(currentRoom)
 		return 'Chaos'
 	else
 		return string.sub(currentRoom.Name, 0, 1)
+	end
+end
+
+function _getNextBiomeName(biomeName)
+	if biomeName == 'F' then
+		return 'G'
+	elseif biomeName == 'G' then
+		return 'H'
+	elseif biomeName == 'H' then
+		return 'I'
 	end
 end
 
