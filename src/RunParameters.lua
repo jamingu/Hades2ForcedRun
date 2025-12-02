@@ -6,7 +6,7 @@ RunParameters = {
         ---------------------
 		F = {
 			Rooms = {
-				{
+				--[[{
 					{
 						Name = 'F_Opening03',
 						Encounter = 'OpeningGeneratedF',
@@ -29,9 +29,10 @@ RunParameters = {
 							}
 						}
 					}
-				},
+				},--]]
 				{
 					{
+						IsDynosisusKeepsakeForced = true,
 						Name = 'F_Combat03',
 						Reward = 'MetaCardPointsCommonDrop',
 						SpawnWaves = {
@@ -79,7 +80,7 @@ RunParameters = {
 					},
 					{
 						Name = 'F_Combat10',
-						Reward = 'StackUpgrade'
+						Reward = 'Pom'
 					},
 				},
 				{
@@ -95,8 +96,8 @@ RunParameters = {
 							},
 							{
 								Spawns = {
-									{ Name = 'Mage',     Count = 2 },
-									{ Name = 'Radiator', Count = 3 },
+									{ Name = 'Mage',     Count = 2, SpawnOnIdKeys = {1,2} },
+									{ Name = 'Radiator', Count = 3, SpawnOnIdKeys = {3,4,5} },
 								}
 							}
 						}
@@ -236,7 +237,7 @@ RunParameters = {
 				{
 					{
 						Name = 'F_Reprieve01',
-						Reward = 'StackUpgrade',
+						Reward = 'Pom',
 					},
 					{
 						Name = 'F_Reprieve01',
@@ -371,7 +372,6 @@ RunParameters = {
 						}
 					}
 				},
-				
 				{
 					{
 						Name = 'G_Combat01',
@@ -482,14 +482,6 @@ RunParameters = {
 				},
 				{
 					{
-						Name = 'G_Intro',
-						Encounter = 'Empty',
-						IsForcedChaos = true,
-					}
-				},
-
-				{
-					{
 						Name = 'G_PreBoss01',
 						IsZagreusForced = false,
 						IsNemesisForced = false,
@@ -531,6 +523,19 @@ RunParameters = {
 						BossName = 'Scylla',
 						BossParameter = 'Scylla',
 					}
+				},
+				{
+					{
+						Name = 'G_PostBoss01',
+						IsForcedWell = true,
+                    	WellContent = {
+							{
+								{Name = 'FirstHitHealTrait', Type = 'Trait'},
+								{Name = 'MetaCardPointsCommonRange', Type = 'Consumable'},
+								{Name = 'TemporaryForcedSecretDoorTrait', Type = 'Trait'},
+							},
+						},
+					}
 				}
             },
 			ChaosRooms = {
@@ -545,6 +550,36 @@ RunParameters = {
 							{ BlessingName = 'Cast', BlessingValue = '1.33', CurseName = 'HiddenRoomReward', CurseValue = '',  Duration = '5', Rarity = 'Epic' },
 						},
 					},
+				}
+			}
+		},
+		H = {
+			Rooms = {
+				{
+					{
+						Name = 'H_Intro',
+						Encounter = 'Empty',
+					}
+				},
+				{
+					{
+						Name = 'H_Combat13',
+						--, pom/hermes
+						--Encounter = 'Empty',
+						Reward = 'Pom',
+
+						--IsFlipped = true,
+						SpawnWaves = {
+							{
+								Spawns = {
+									{ Name = 'Mage_Elite', Count = 5 },
+									{ Name = 'Radiator',   Count = 1 },
+									{ Name = 'Screamer',   Count = 5 },
+								}
+							}
+						},
+
+					}
 				}
 			}
 		}
