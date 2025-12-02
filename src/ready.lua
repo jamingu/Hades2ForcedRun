@@ -12,6 +12,11 @@ modutil.mod.Path.Wrap("ChooseNextRoomData", function(base, ...)
 	end
 end)
 
+-- Choose the starting room (intro/opening)
+modutil.mod.Path.Wrap("ChooseStartingRoom", function(base, ...)
+	return generateForcedStartingRoom(...)
+end)
+
 -- Choose the Room Rewards
 modutil.mod.Path.Wrap("ChooseRoomReward", function(base, run, room, rewardStoreName, previouslyChosenRewards, args)
 	local forcedRoomRewards = getForcedRoomRewards(run, room)
@@ -33,11 +38,6 @@ modutil.mod.Path.Wrap("ChooseEncounter", function(base, currentRun, room, args)
 	else
 		return base(currentRun, room, args)
 	end
-end)
-
--- Choose the starting room (intro/opening)
-modutil.mod.Path.Wrap("ChooseStartingRoom", function(base, ...)
-	return generateForcedStartingRoom(...)
 end)
 
 -- Force the traits offered in the boon list
@@ -69,6 +69,15 @@ modutil.mod.Path.Wrap("StartRoom", function(base, ...)
 	return base(...)
 end)
 
+
+modutil.mod.Path.Wrap("LoadMap", function(base, argTable)
+	local baseRoomName = getRoomBaseNameFromName(argTable.Name)
+	if baseRoomName then
+		argTable.Name = baseRoomName
+	end
+
+	return base(argTable)
+end)
 
 ----------------------------------------------
 ----------------------------------------------

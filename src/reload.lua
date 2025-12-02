@@ -407,15 +407,48 @@ function forcedStartRoom(currentRun, startRoom)
 	end
 end
 
+function getRoomBaseNameFromName(roomName)
+	rom.log.warning('--- START MY LOADMAP --- ' .. roomName)
+	
+	local roomParametersKey = {}
+	for token in string.gmatch(roomName, "[^_]+") do
+		table.insert(roomParametersKey, token)
+	end
+
+	for k,token in pairs(roomParametersKey) do
+		rom.log.warning(token)
+	end
+
+	local biomeName = roomParametersKey[1]
+	local roomDepth = tonumber(roomParametersKey[2])
+	local roomNumber = tonumber(roomParametersKey[3])
+
+	local newRoomName = nil
+	if biomeName and roomDepth and roomNumber then
+		if RunParameters.Biomes[biomeName] and RunParameters.Biomes[biomeName].Rooms[roomDepth] and RunParameters.Biomes[biomeName].Rooms[roomDepth][roomNumber] then
+			local roomParameters = RunParameters.Biomes[biomeName].Rooms[roomDepth][roomNumber]
+
+			if roomParameters and roomParameters.Name then
+				newRoomName = roomParameters.Name
+			end
+		end
+	end
+
+	if newRoomName then
+		rom.log.warning('Replace Room name : ' .. newRoomName)
+		return newRoomName
+	else
+		rom.log.warning('LoadMap name incorrect, not normal, should maybe generate an error/exception')
+		return nil
+	end
+end
+
 function getForcedRoomRewards(run, room)
 	return room.ForcedRewards
 end
 
 function _createRoomData(roomParameters)
 	if roomParameters then
-		-- Ensure the room is generated only once
-		roomParameters.IsGenerated = true
-
 		-- Retrieve the default RoomData
 		local createdRoomData = RoomData[roomParameters.Name]
 
@@ -485,13 +518,33 @@ function _createRoomData(roomParameters)
 		end
 
 		if string.find(roomParameters.Name, '_Shop') then
+			createdRoomData.IsShop = true
 			-- Handle Zagreus contract spawn in shop, set in the global StoreData variable
 			if roomParameters.IsZagreusForced then
 				StoreData.ZagreusContractRequirement.ChanceToPlay = 1
 			else
 				StoreData.ZagreusContractRequirement.ChanceToPlay = 0
 			end
+		elseif string.find(roomParameters.Name, '_Combat') then
+			createdRoomData.IsCombat = true
+		elseif string.find(roomParameters.Name, '_Opening') then
+			rom.log.warning('IS OPENING')
+			createdRoomData.IsOpening = true
+		elseif string.find(roomParameters.Name, '_PostBoss') then
+			createdRoomData.IsEndBiome = true
 		end
+
+		-- Set created room parameters
+		createdRoomData.IsGenerated = true
+		createdRoomData.UniqueId = roomParameters.UniqueId
+		createdRoomData.BiomeName = roomParameters.BiomeName
+		createdRoomData.BaseRoomName = createdRoomData.Name
+
+		-- Set a Unique RoomData name, and add it to the global variables list of rooms
+		createdRoomData.Name = createdRoomData.UniqueId
+
+		rom.log.warning('Room added to RoomData[] ' .. createdRoomData.UniqueId)
+		AddTableKeysCheckDupes( RoomData, {createdRoomData} )
 
 		return createdRoomData
 	else
@@ -544,11 +597,14 @@ function _getRunParametersStartingRoom()
 	--@todo handle not F starting Biome
 
 	local startingBiomeName = 'F'
-	RunParameters.Biomes[startingBiomeName].Rooms[1][1].IsGenerated = true
+	local startingRoom = RunParameters.Biomes[startingBiomeName].Rooms[1][1]
+	startingRoom.UniqueId = startingBiomeName .. '_1_1'
+	startingRoom.BiomeName = startingBiomeName
+
 	return RunParameters.Biomes[startingBiomeName].Rooms[1][1]
 end
 
-function _geRunParametersNextRoom(biomeName, roomName)
+function _getRunParametersNextRoom(biomeName, roomName)
 	if biomeName == 'Chaos' then
 		-- Handle specific Chaos Biome, find the last ChaosRoom with this name that has been generated
 		for tmpBiomeName, biomeParameters in pairs(RunParameters.Biomes) do
@@ -580,14 +636,11 @@ function _geRunParametersNextRoom(biomeName, roomName)
 						return RunParameters.Biomes[nextBiomeName].Rooms[1][1]
 					else
 						for k3, nextRoom in pairs(RunParameters.Biomes[biomeName].Rooms[k+1]) do
-							-- Add a property to indicate this room has been generated
+							-- Add properties to the room to generate
 							if not nextRoom.IsGenerated then
-								--RunParameters.Biomes[biomeName].Rooms[k+1][k3].IsGenerated = true
-								--RunParameters.Biomes[biomeName].Rooms[k+1][k3].UniqueId = biomeName .. '_' .. (k+1) .. '_' .. k3
-								nextRoom.IsGenerated = true
-								nextRoom.UniqueId = biomeName .. '---' .. (k+1) .. '---' .. k3
-								rom.log.warning('test 2')
-								rom.log.warning(RunParameters.Biomes[biomeName].Rooms[k+1][k3].UniqueId)
+								nextRoom.UniqueId = biomeName .. '_' .. (k+1) .. '_' .. k3
+								nextRoom.BiomeName = biomeName
+
 								return nextRoom
 							end
 						end
