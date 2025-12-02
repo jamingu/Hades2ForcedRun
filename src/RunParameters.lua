@@ -6,7 +6,7 @@ RunParameters = {
         ---------------------
 		F = {
 			Rooms = {
-				--[[{
+				{
 					{
 						Name = 'F_Opening03',
 						Encounter = 'OpeningGeneratedF',
@@ -29,7 +29,7 @@ RunParameters = {
 							}
 						}
 					}
-				},--]]
+				},
 				{
 					{
 						IsDynosisusKeepsakeForced = true,
