@@ -14,7 +14,7 @@ end)
 
 -- Choose the starting room (intro/opening)
 modutil.mod.Path.Wrap("ChooseStartingRoom", function(base, ...)
-	return generateForcedStartingRoom(...)
+	return generateForcedOpeningRoom(...)
 end)
 
 -- Choose the Room Rewards
@@ -28,12 +28,12 @@ modutil.mod.Path.Wrap("ChooseRoomReward", function(base, run, room, rewardStoreN
 	return base(run, room, rewardStoreName, previouslyChosenRewards, args)
 end)
 
--- Choose the encounter waves, parameters must be passed instead of '...' otherwise it bugs for the opening room
+-- Generate the encounter
 modutil.mod.Path.Wrap("ChooseEncounter", function(base, currentRun, room, args)
 	local forcedEncounterData = generateForcedEncounterData(currentRun, room, args)
 
 	if forcedEncounterData ~= nil then
-		local encounter = SetupEncounter(forcedEncounterData, room)
+		local encounter = game.SetupEncounter(forcedEncounterData, room)
 		return encounter
 	else
 		return base(currentRun, room, args)
@@ -64,19 +64,25 @@ end)
 
 -- Room start
 modutil.mod.Path.Wrap("StartRoom", function(base, ...)
-	forcedStartRoom(...)
+	MyStartRoom(...)
 
 	return base(...)
 end)
 
 
 modutil.mod.Path.Wrap("LoadMap", function(base, argTable)
-	local baseRoomName = getRoomBaseNameFromName(argTable.Name)
+	local baseRoomName = _getRoomBaseName(argTable.Name)
 	if baseRoomName then
 		argTable.Name = baseRoomName
 	end
 
 	return base(argTable)
+end)
+
+modutil.mod.Path.Wrap("RunStateInit", function(base)
+	base()
+
+	MyRunStateInit()
 end)
 
 ----------------------------------------------
