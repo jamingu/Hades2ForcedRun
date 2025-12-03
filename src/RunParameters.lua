@@ -32,7 +32,6 @@ RunParameters = {
 				},
 				{
 					{
-						IsDynosisusKeepsakeForced = true,
 						Name = 'F_Combat03',
 						Reward = 'MetaCardPointsCommonDrop',
 						SpawnWaves = {
@@ -253,7 +252,6 @@ RunParameters = {
 						Name = 'F_Story01',
 						Traits = { 'HighArmorCostume', 'EscalatingCostume', 'VitalityCostume'},
 					},
-					
 				},
 				{
 					{
@@ -331,9 +329,9 @@ RunParameters = {
 								{Name = 'LimitedSwapTraitDrop', Type = 'Consumable'},
 							},
 							{
+								{Name = 'TemporaryMoveSpeedTrait', Type = 'Trait'},
 								{Name = 'LimitedManaRegenDrop', Type = 'Consumable'},
 								{Name = 'TemporaryImprovedExTrait', Type = 'Trait'},
-								{Name = 'TemporaryMoveSpeedTrait', Type = 'Trait'},
 							},
 						},
 					}
@@ -345,7 +343,7 @@ RunParameters = {
         ---------------------
 		G = {
             Rooms = {
-                {
+                --[[{
 					{
 						Name = 'G_Intro',
 						Encounter = 'Empty',
@@ -358,7 +356,6 @@ RunParameters = {
 						Reward = 'MetaCardPointsCommonDrop',
 					}
 				},
-				
 				{
 					{
 						Name = 'G_Combat07',
@@ -371,12 +368,12 @@ RunParameters = {
 							}
 						}
 					}
-				},
+				},]]
 				{
-					{
+					--[[{
 						Name = 'G_Combat01',
 						Reward = 'MetaCurrencyDrop',
-					},
+					},]]
 					{
 						Name = 'G_Shop01',
 						IsNemesisForced = false,
@@ -400,7 +397,7 @@ RunParameters = {
 					{
 						Name = 'G_MiniBoss03',
 						Reward = 'Boon',
-						BoonGod = 'Hera',
+						BoonGod = 'Poseidon',
 						Traits = {
 							{
 								{ Name = 'Sprint', Rarity = 'Common' },
@@ -415,7 +412,7 @@ RunParameters = {
 						},
 					},
 					{
-						Name = 'G_MiniBoss01',
+						Name = 'G_MiniBoss03',
 						Reward = 'Boon',
 						BoonGod = 'Hestia',
 					},
@@ -441,7 +438,6 @@ RunParameters = {
 						Name = 'G_Combat16',
 						Reward = 'Boon',
 						BoonGod = 'Poseidon',
-						
 					},
 					{
 						Name = 'G_Combat16',
@@ -538,20 +534,6 @@ RunParameters = {
 					}
 				}
             },
-			ChaosRooms = {
-				{
-					Name = 'Chaos_03',
-					GoldPots = {Count = 1},
-					IsFlipped = true,
-					Traits = {
-						{
-							{ BlessingName = 'Attack', BlessingValue = '1.205', CurseName = 'SecondaryAttack', CurseValue = '5', Duration = '4', Rarity = 'Rare' },
-							{ BlessingName = 'Mana', BlessingValue = '32', CurseName = 'DeathWeapon', CurseValue = '',  Duration = '5', Rarity = 'Common' },
-							{ BlessingName = 'Cast', BlessingValue = '1.33', CurseName = 'HiddenRoomReward', CurseValue = '',  Duration = '5', Rarity = 'Epic' },
-						},
-					},
-				}
-			}
 		},
 		H = {
 			Rooms = {
@@ -581,6 +563,25 @@ RunParameters = {
 
 					}
 				}
+			}
+		},
+		Chaos = {
+			-- Chaos Rooms also have a RoomDepth index that is useless but make the code more generic
+			Rooms = {
+				{
+					{
+						Name = 'Chaos_03',
+						GoldPots = {Count = 1},
+						IsFlipped = true,
+						Traits = {
+							{
+								{ BlessingName = 'Attack', BlessingValue = '1.205', CurseName = 'SecondaryAttack', CurseValue = '5', Duration = '4', Rarity = 'Rare' },
+								{ BlessingName = 'Mana', BlessingValue = '32', CurseName = 'DeathWeapon', CurseValue = '',  Duration = '5', Rarity = 'Common' },
+								{ BlessingName = 'Cast', BlessingValue = '1.33', CurseName = 'HiddenRoomReward', CurseValue = '',  Duration = '5', Rarity = 'Epic' },
+							},
+						},
+					}
+				},
 			}
 		}
 	},

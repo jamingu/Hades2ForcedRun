@@ -7,13 +7,17 @@
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
+-- Forced Devotion Gods
+
 -- @finish foolish run:
--- 
 -- handle Fields then the rest
 -- Handle Tartarus
 
+
+
 -- @later:
--- rewards as a list, to allow rerolling door offers. Big impact on the current code
+-- rewards as a list ? to allow rerolling door offers. Big impact on the current code
+-- only load once the runparameters in RoomData
 -- unrandomise gathering spots and location
 -- unrandomise location pot of gold
 -- unrandomise enemies gold on death
@@ -22,34 +26,83 @@
 -- Forced Devotion Gods
 -- In oceanus, unrandomise hidden doors reward after clearing a wave
 -- Handle every Chaos curse/bless
--- Handle surface runs
 -- unrandomise the purging altar in inter-biome
+-- unrandomise random pom affected boon
+-- handle that taking a Chaos in the fields does not advance the run position
+-- Handle surface runs
 
-function generateForcedStartingRoom( currentRun, args )
-	--Force the generation of the Opening room
-	local startingRoomData = _createRoomData(_getRunParametersStartingRoom())
+-- "Global" variables to handle the position in the run
+local GlobalCurrentBiomeName
+local GlobalRoomDepth
+local GlobalRoomNumber
 
-	local startingRoom = CreateRoom( startingRoomData, args )
+--Force the generation of the Opening room
+function generateForcedOpeningRoom(currentRun, args)
+	--@todo handle not F starting Biome
+	local startingBiomeName = 'G'
+	local startingRoomData = game.RoomData[startingBiomeName .. '_1_1']
+
+	local startingRoom = game.CreateRoom(startingRoomData, args)
 	return startingRoom
 end
 
 function generateForcedNextRoomData(currentRun, args, otherDoors)
 	if currentRun and currentRun.CurrentRoom then
-		local currentBiomeName = _getBiomeName(currentRun.CurrentRoom)
 		local currentRoomName = currentRun.CurrentRoom.Name
+		local keys = _getParametersKeysFromName(currentRoomName)
 
-		local nextRoom
+		-- If the current room is the Biome ending room, go to the next biome
+		if currentRun.CurrentRoom.IsEndBiome then
+			local nextBiomeRoom = game.RoomData[_getRoomName(_getNextBiomeName(keys.BiomeName),'1','1')]
+			if nextBiomeRoom then
+				return nextBiomeRoom
+			end
+		end
+						
+		-- Specific case for Chaos room generation
 		if args and args.ForceNextRoomSet and args.ForceNextRoomSet == 'Chaos' then
-			nextRoom = _getRunParametersNextChaosRoom(currentBiomeName, currentRoomName)
+			local cpt = 1
+			while game.RoomData[_getRoomName('Chaos', 1, cpt)] do
+				local roomName = _getRoomName('Chaos', 1, cpt)
+
+				local room = game.RoomData[roomName]
+				if not room.IsGenerated then
+					room.IsGenerated = true
+					return room
+				end
+
+				cpt = cpt+1
+			end
 		else
-			nextRoom = _getRunParametersNextRoom(currentBiomeName, currentRoomName)
+			-- Specific case if in a Chaos room when trying to generate the next room
+			local biomeName
+			local nextRoomDepth
+			if keys.BiomeName == 'Chaos' then
+				biomeName = GlobalCurrentBiomeName
+				nextRoomDepth = currentRun.BiomeDepthCache + 1
+			else
+				biomeName = keys.BiomeName
+				-- Retrieve the next non-generated room at one depth below
+				nextRoomDepth = keys.RoomDepth+1
+			end
+
+			local cpt = 1
+			while game.RoomData[_getRoomName(biomeName, nextRoomDepth, cpt)] do
+				local roomName = _getRoomName(biomeName, nextRoomDepth, cpt)
+
+				local room = game.RoomData[roomName]
+				if not room.IsGenerated then
+					room.IsGenerated = true
+					return room
+				end
+
+				cpt = cpt+1
+			end
 		end
 
-		if nextRoom then
-			return _createRoomData(nextRoom)
-		end
+		rom.log.warning('WARNING => generateForcedNextRoomData Return nil for roomName : ' .. currentRoomName)
 
-		-- No index exists, return a default generated room
+		-- Return nil to let the game generate a room
 		return nil
 	end
 end
@@ -57,22 +110,22 @@ end
 function generateForcedShopOptions(args)
 	local shopOptions = nil
 
-	if CurrentRun and CurrentRun.CurrentRoom then
-		local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
-		
+	if game.CurrentRun and game.CurrentRun.CurrentRoom then
+		local currentRoom = game.CurrentRun.CurrentRoom
+
 		if currentRoom then
 			if currentRoom.ShopContent then
 				shopOptions = {}
-				for k,shopContent in pairs(currentRoom.ShopContent) do
-					-- For information, order of shop appearance seems weird (2,3,1) if want to force it
+				for k, shopContent in pairs(currentRoom.ShopContent) do
+					-- For information, order of shop appearance seems weird (2,3,1)
 					local shopOption
 					if shopContent.Reward == 'Boon' then
 						-- ResourceCosts = {Money = 150}
-						local tmpArgs =  {
-							ForceLootName = shopContent.BoonGod..'Upgrade',
+						local tmpArgs = {
+							ForceLootName = shopContent.BoonGod .. 'Upgrade',
 							BoughtFromShop = true,
 							DoesNotBlockExit = true,
-							ResourceCosts = {Money = 150}
+							ResourceCosts = { Money = 150 }
 						}
 						shopOption = {
 							Name = 'RandomLoot',
@@ -100,7 +153,7 @@ function generateForcedShopOptions(args)
 						shopOption = {
 							Name = 'BlindBoxLoot',
 							Type = 'Consumable',
-							ForceLootName = shopContent.BoonGod..'Upgrade',
+							ForceLootName = shopContent.BoonGod .. 'Upgrade',
 						}
 					else
 						shopOption = {
@@ -114,7 +167,7 @@ function generateForcedShopOptions(args)
 			elseif currentRoom.WellContent and currentRoom.WellContent[1] then
 				wellContentOptions = table.remove(currentRoom.WellContent, 1)
 				shopOptions = {}
-				for k,wellContentOption in pairs(wellContentOptions) do
+				for k, wellContentOption in pairs(wellContentOptions) do
 					local shopOption = {
 						Name = wellContentOption.Name,
 						Type = wellContentOption.Type
@@ -129,71 +182,70 @@ function generateForcedShopOptions(args)
 end
 
 function generateForcedEncounterData(currentRun, room, args)
-	local currentRoom = _getRunParametersForRoom(room)
+	local currentBiomeName = _getBiomeName(room)
 
-	if currentRoom then
-		local currentBiomeName = _getBiomeName(currentRoom)
-		if string.find(currentRoom.Name, '_Combat') or string.find(currentRoom.Name, '_Opening') then
-			local encounterName
-			if currentRoom.Encounter then
-				encounterName = currentRoom.Encounter
-			else
-				encounterName = 'Generated'..currentBiomeName
-			end
+	local encounterName
+	if room.EncounterName then
+		encounterName = room.EncounterName
+	elseif room.IsCombat then
+		encounterName = 'Generated' .. currentBiomeName
+	elseif room.IsOpening then
+		encounterName = 'OpeningGeneratedF'
+	end
 
-			local createdEncounterData = DeepCopyTable(EncounterData[encounterName])
+	if encounterName then
+		local createdEncounterData = game.DeepCopyTable(game.EncounterData[encounterName])
 
-			-- Create custom spawn waves
-			if (currentRoom.SpawnWaves ~= nil) then
-				-- Create the spawn waves
-				local createdSpawnWaves = {}
-				local waveCount = 0
-				for spawnWaveKey, spawnWaveValues in pairs(currentRoom.SpawnWaves) do
-					-- init
-					createdSpawnWaves[spawnWaveKey] = {
-						Spawns = {},
-						SpawnOrder = spawnWaveValues.SpawnOrder
+		-- Create custom spawn waves
+		if room.SpawnWaves ~= nil then
+			-- Create the spawn waves
+			local createdSpawnWaves = {}
+			local waveCount = 0
+			for spawnWaveKey, spawnWaveValues in pairs(room.SpawnWaves) do
+				-- init
+				createdSpawnWaves[spawnWaveKey] = {
+					Spawns = {},
+					SpawnOrder = spawnWaveValues.SpawnOrder
+				}
+
+				waveCount = waveCount + 1
+
+				for spawnValueKey, spawnValue in pairs(spawnWaveValues.Spawns) do
+					createdSpawnWaves[spawnWaveKey].Spawns[spawnValueKey] = {
+						Name = spawnValue.Name,
+						CountMin = spawnValue.Count,
+						CountMax = spawnValue.Count,
+						SpawnOnIdKeys = spawnValue.SpawnOnIdKeys,
 					}
-
-					waveCount = waveCount + 1
-
-					for spawnValueKey, spawnValue in pairs(spawnWaveValues.Spawns) do
-						createdSpawnWaves[spawnWaveKey].Spawns[spawnValueKey] = {
-							Name = spawnValue.Name,
-							CountMin = spawnValue.Count,
-							CountMax = spawnValue.Count,
-							SpawnOnIdKeys = spawnValue.SpawnOnIdKeys,
-						}
-					end
-				end
-
-				createdEncounterData.SpawnWaves = createdSpawnWaves
-				createdEncounterData.MinWaves = waveCount
-				createdEncounterData.MaxWaves = waveCount
-				createdEncounterData.SpawnIntervalMax = createdEncounterData.SpawnIntervalMin
-			end
-
-			return createdEncounterData
-		elseif string.find(currentRoom.Name, '_Shop') then
-			-- Handle Nemesis spawn in shop. Must be set in the global variable as it is the one accessed in StartRoom and not the encounterData itself
-			for k,event in pairs(EncounterData['Shop'].StartRoomUnthreadedEvents) do
-				if event.FunctionName == 'CheckNemesisShoppingEvent' then
-					if currentRoom.IsNemesisForced then
-						EncounterData['Shop'].StartRoomUnthreadedEvents[k].GameStateRequirements.ChanceToPlay = 1
-					else
-						EncounterData['Shop'].StartRoomUnthreadedEvents[k].GameStateRequirements.ChanceToPlay = 0
-					end
-
-					break
 				end
 			end
 
-			return createdEncounterData
+			createdEncounterData.SpawnWaves = createdSpawnWaves
+			createdEncounterData.MinWaves = waveCount
+			createdEncounterData.MaxWaves = waveCount
+			createdEncounterData.SpawnIntervalMax = createdEncounterData.SpawnIntervalMin
+		end
+
+		return createdEncounterData
+	end
+
+	if room.IsShop then
+		-- Handle Nemesis spawn in shop. Must be set in the global variable as it is the one accessed in StartRoom and not the encounterData itself
+		for k, event in pairs(game.EncounterData['Shop'].StartRoomUnthreadedEvents) do
+			if event.FunctionName == 'CheckNemesisShoppingEvent' then
+				if room.IsNemesisForced then
+					game.EncounterData['Shop'].StartRoomUnthreadedEvents[k].GameStateRequirements.ChanceToPlay = 1
+				else
+					game.EncounterData['Shop'].StartRoomUnthreadedEvents[k].GameStateRequirements.ChanceToPlay = 0
+				end
+
+				break
+			end
 		end
 	end
 end
 
-function generateForcedRewardTraits( lootData, args )
+function generateForcedRewardTraits(lootData, args)
 	local upgradeOptions = nil
 
 	if lootData.GodLoot then
@@ -215,57 +267,56 @@ function generateForcedRewardTraits( lootData, args )
 end
 
 function generateForcedBoonRewardTraits(lootData)
-	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 
-	-- Retrieve the name of the speaking God to concatenate with the boon name 
+	-- Retrieve the name of the speaking God to concatenate with the boon name
 	local speakerName = lootData.SpeakerName
 	local forcedTraits = nil
 
-
 	-- If a BoonTraits parameter exists (room or shop), force it
-	if currentRoom and currentRoom.Traits and currentRoom.Traits[1] then
+	if currentRoomParameters and currentRoomParameters.Traits and currentRoomParameters.Traits[1] then
 		-- Standard Room reward
-		forcedTraits = table.remove(currentRoom.Traits, 1) -- Pop the first offered traits list
-	elseif currentRoom and currentRoom.ShopContent then
+		forcedTraits = table.remove(currentRoomParameters.Traits, 1) -- Pop the first offered traits list
+	elseif currentRoomParameters and currentRoomParameters.ShopContent then
 		-- Shop option
-		for k, shopElement in pairs(currentRoom.ShopContent) do
+		for k, shopElement in pairs(currentRoomParameters.ShopContent) do
 			-- Regular Boon
 			if shopElement.Reward == 'Boon' and shopElement.BoonGod == speakerName then
-				if currentRoom.ShopContent[k].Traits and currentRoom.ShopContent[k].Traits[1] then
-					forcedTraits = table.remove(currentRoom.ShopContent[k].Traits, 1)
+				if currentRoomParameters.ShopContent[k].Traits and currentRoomParameters.ShopContent[k].Traits[1] then
+					forcedTraits = table.remove(currentRoomParameters.ShopContent[k].Traits, 1)
 					break
 				end
 			end
 
 			-- Random Boon
 			if shopElement.Reward == 'RandomBoon' and shopElement.BoonGod == speakerName then
-				if currentRoom.ShopContent[k].Traits and currentRoom.ShopContent[k].Traits[1] then
-					forcedTraits = table.remove(currentRoom.ShopContent[k].Traits, 1)
+				if currentRoomParameters.ShopContent[k].Traits and currentRoomParameters.ShopContent[k].Traits[1] then
+					forcedTraits = table.remove(currentRoomParameters.ShopContent[k].Traits, 1)
 					break
 				end
 			end
 		end
-	elseif currentRoom and currentRoom.ArtemisTraits and currentRoom.ArtemisTraits[1] then
+	elseif currentRoomParameters and currentRoomParameters.ArtemisTraits and currentRoomParameters.ArtemisTraits[1] then
 		-- Artemis
-		forcedTraits = table.remove(currentRoom.ArtemisTraits, 1)
+		forcedTraits = table.remove(currentRoomParameters.ArtemisTraits, 1)
 	end
 
 	if forcedTraits ~= nil then
 		local upgradeOptions = {}
-		for k,trait in pairs(forcedTraits) do
-			local itemName =  trait.Name
+		for k, trait in pairs(forcedTraits) do
+			local itemName = trait.Name
 			-- AttackBoon is named WeaponBoon in the game files
 			if itemName == 'Attack' then
-				itemName =  'Weapon'
+				itemName = 'Weapon'
 			end
 
-			itemName = itemName..'Boon'
+			itemName = itemName .. 'Boon'
 
 			-- Concatenate the god name for "WeapongUpgrades": attack/special/cast/sprint/mana
-			if LootSetData[speakerName] and LootSetData[speakerName][speakerName..'Upgrade'] and LootSetData[speakerName][speakerName..'Upgrade'].WeaponUpgrades then
-				for k, weapongUpgrade in pairs(LootSetData[speakerName][speakerName..'Upgrade'].WeaponUpgrades) do
-					if weapongUpgrade == speakerName..itemName then
-						itemName = speakerName..itemName
+			if game.LootSetData[speakerName] and game.LootSetData[speakerName][speakerName .. 'Upgrade'] and game.LootSetData[speakerName][speakerName .. 'Upgrade'].WeaponUpgrades then
+				for _, weapongUpgrade in pairs(game.LootSetData[speakerName][speakerName .. 'Upgrade'].WeaponUpgrades) do
+					if weapongUpgrade == speakerName .. itemName then
+						itemName = speakerName .. itemName
 						break
 					end
 				end
@@ -283,10 +334,9 @@ function generateForcedBoonRewardTraits(lootData)
 end
 
 function generateForcedHammerRewardTraits()
-	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	local currentRoom = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 
 	local forcedTraits = nil
-
 	-- If a BoonTraits parameter exists (room or shop), force it
 	if currentRoom and currentRoom.Traits then
 		-- Standard Room reward
@@ -305,7 +355,7 @@ function generateForcedHammerRewardTraits()
 
 	if forcedTraits ~= nil then
 		local upgradeOptions = {}
-		for k,trait in pairs(forcedTraits) do
+		for k, trait in pairs(forcedTraits) do
 			table.insert(upgradeOptions, {
 				Type = 'WeaponUpgrade',
 				ItemName = trait,
@@ -317,22 +367,22 @@ function generateForcedHammerRewardTraits()
 end
 
 function generateForcedChaosTraits()
-	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	local currentRoom = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 
 	local forcedTraits = nil
 	if currentRoom and currentRoom.Traits then
-		forcedTraits = table.remove(currentRoom.Traits,1)
+		forcedTraits = table.remove(currentRoom.Traits, 1)
 	end
 
 	if forcedTraits ~= nil then
 		local upgradeOptions = {}
-		for k,trait in pairs(forcedTraits) do
+		for k, trait in pairs(forcedTraits) do
 			if trait.BlessingName == 'Attack' then
 				trait.BlessingName = 'Weapon'
 			end
 
-			local blessingName = 'Chaos'..trait.BlessingName..'Blessing'
-			local curseName = 'Chaos'..trait.CurseName..'Curse'
+			local blessingName = 'Chaos' .. trait.BlessingName .. 'Blessing'
+			local curseName = 'Chaos' .. trait.CurseName .. 'Curse'
 			table.insert(upgradeOptions, {
 				Type = 'TransformingTrait',
 				ItemName = blessingName,
@@ -345,46 +395,55 @@ function generateForcedChaosTraits()
 
 			-- Blessings values
 			if blessingName == 'ChaosWeaponBlessing' then
-				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin = tonumber(trait.BlessingValue)
-				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMax = TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin
+				game.TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin = tonumber(trait.BlessingValue)
+				game.TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMax =game. TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin
 			elseif blessingName == 'ChaosManaBlessing' then
-				TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMin = tonumber(trait.BlessingValue)
-				TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMax = TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMin
+				game.TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMin = tonumber(trait.BlessingValue)
+				game.TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMax = game.TraitSetData.Chaos[blessingName].PropertyChanges[1].BaseMin
 			elseif blessingName == 'ChaosCastBlessing' then
-				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin = tonumber(trait.BlessingValue)
-				TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMax = TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin
+				game.TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin = tonumber(trait.BlessingValue)
+				game.TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMax = game.TraitSetData.Chaos[blessingName].AddOutgoingDamageModifiers.ValidWeaponMultiplier.BaseMin
 			end
 
 			-- Curses values and duration
 			if curseName == 'ChaosSecondaryAttackCurse' then
-				TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMin = trait.CurseValue
-				TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMax = TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMin
+				game.TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMin = trait.CurseValue
+				game.TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMax = game.TraitSetData.Chaos[curseName].DamageOnFireWeapons.Damage.BaseMin
 			end
 
 			-- Duration
-			TraitSetData.Chaos[curseName].RemainingUses.BaseMin = trait.Duration
-			TraitSetData.Chaos[curseName].RemainingUses.BaseMax = TraitSetData.Chaos[curseName].RemainingUses.BaseMin
+			game.TraitSetData.Chaos[curseName].RemainingUses.BaseMin = trait.Duration
+			game.TraitSetData.Chaos[curseName].RemainingUses.BaseMax = game.TraitSetData.Chaos[curseName].RemainingUses.BaseMin
 		end
 
 		return upgradeOptions
 	end
 end
 
-function forcedStartRoom(currentRun, startRoom)
-	local currentRoom = _getRunParametersForRoom(startRoom)
+function MyStartRoom(currentRun, room)
+	local currentRoom = room
+
+	-- Set the "Global" variables of the current position in the run
+	local keys = _getParametersKeysFromName(currentRoom.Name)
+	if keys.BiomeName ~= 'Chaos' then
+		-- Keep the current "real" biomeName
+		GlobalCurrentBiomeName = keys.BiomeName
+	end
+	GlobalRoomDepth = keys.RoomDepth
+	GlobalRoomNumber = keys.RoomNumber
 
 	-- Force well position
 	if currentRoom and currentRoom.WellSpawnOnIdKey then
-		local challengeBaseIds = GetIdsByType({ Name = "ChallengeSwitchBase" })
+		local challengeBaseIds = game.GetIdsByType({ Name = "ChallengeSwitchBase" })
 		if challengeBaseIds[currentRoom.WellSpawnOnIdKey] then
-			RoomData[currentRoom.Name].WellShopChallengeBaseId = challengeBaseIds[currentRoom.WellSpawnOnIdKey]
+			game.RoomData[currentRoom.Name].WellShopChallengeBaseId = challengeBaseIds[currentRoom.WellSpawnOnIdKey]
 		end
 	end
 
 	-- Force Boss patterns
 	if currentRoom then
 		if currentRoom.BossName == 'Hecate' and currentRoom.BossParameter then
-			UnitSetData[currentRoom.BossName][currentRoom.BossName].AIStages[2].MidPhaseWeapons = {currentRoom.BossParameter}
+			game.UnitSetData[currentRoom.BossName][currentRoom.BossName].AIStages[2].MidPhaseWeapons = { currentRoom.BossParameter }
 		end
 		--Scylla fight logic is set in MyApplyScyllaFightSpotlight
 	end
@@ -395,51 +454,17 @@ function forcedStartRoom(currentRun, startRoom)
 		goldPotsCount = currentRoom.GoldPots.Count
 	end
 	if currentRoom then
-		RoomData[currentRoom.Name].BreakableValueOptions = { MaxHighValueBreakables = goldPotsCount }
-		RoomData[currentRoom.Name].BreakableHighValueChanceMultiplier = 100.0
+		game.RoomData[currentRoom.Name].BreakableValueOptions = { MaxHighValueBreakables = goldPotsCount }
+		game.RoomData[currentRoom.Name].BreakableHighValueChanceMultiplier = 100.0
 	end
 
 	-- Forced Dyonisus keepsake skip fight
 	if currentRoom and currentRoom.IsDynosisusKeepsakeForced then
-		TraitSetData.Keepsakes.SkipEncounterKeepsake.AcquireFunctionArgs.SkipEncounterChance = 1
+		rom.log.warning('FIG forced')
+		game.TraitSetData.Keepsakes.SkipEncounterKeepsake.AcquireFunctionArgs.SkipEncounterChance = 1
 	else
-		TraitSetData.Keepsakes.SkipEncounterKeepsake.AcquireFunctionArgs.SkipEncounterChance = 0
-	end
-end
-
-function getRoomBaseNameFromName(roomName)
-	rom.log.warning('--- START MY LOADMAP --- ' .. roomName)
-	
-	local roomParametersKey = {}
-	for token in string.gmatch(roomName, "[^_]+") do
-		table.insert(roomParametersKey, token)
-	end
-
-	for k,token in pairs(roomParametersKey) do
-		rom.log.warning(token)
-	end
-
-	local biomeName = roomParametersKey[1]
-	local roomDepth = tonumber(roomParametersKey[2])
-	local roomNumber = tonumber(roomParametersKey[3])
-
-	local newRoomName = nil
-	if biomeName and roomDepth and roomNumber then
-		if RunParameters.Biomes[biomeName] and RunParameters.Biomes[biomeName].Rooms[roomDepth] and RunParameters.Biomes[biomeName].Rooms[roomDepth][roomNumber] then
-			local roomParameters = RunParameters.Biomes[biomeName].Rooms[roomDepth][roomNumber]
-
-			if roomParameters and roomParameters.Name then
-				newRoomName = roomParameters.Name
-			end
-		end
-	end
-
-	if newRoomName then
-		rom.log.warning('Replace Room name : ' .. newRoomName)
-		return newRoomName
-	else
-		rom.log.warning('LoadMap name incorrect, not normal, should maybe generate an error/exception')
-		return nil
+		rom.log.warning('FIG blocked')
+		game.TraitSetData.Keepsakes.SkipEncounterKeepsake.AcquireFunctionArgs.SkipEncounterChance = 0
 	end
 end
 
@@ -447,233 +472,26 @@ function getForcedRoomRewards(run, room)
 	return room.ForcedRewards
 end
 
-function _createRoomData(roomParameters)
-	if roomParameters then
-		-- Retrieve the default RoomData
-		local createdRoomData = RoomData[roomParameters.Name]
-
-		-- Handle Chaos chance
-		if roomParameters.IsForcedChaos then
-			createdRoomData.SecretSpawnChance = 1
-		else
-			createdRoomData.SecretSpawnChance = 0
-		end
-
-		-- Handle Well chance
-		if roomParameters.IsForcedWell then
-			createdRoomData.ForceWellShop = 1
-			createdRoomData.WellShopSpawnChance = 1
-		else
-			createdRoomData.WellShopSpawnChance = 0
-		end
-
-		-- Prevent room random flipping
-		if roomParameters.IsFlipped then
-			createdRoomData.Flipped = roomParameters.IsFlipped
-		else
-			createdRoomData.Flipped = false
-		end
-		
-		-- Force the reward
-		if roomParameters.Reward == 'Boon' then
-			createdRoomData.ForcedRewards = {
-				{
-					Name = roomParameters.Reward,
-					LootName = roomParameters.BoonGod .. 'Upgrade',
-				},
-			}
-		elseif roomParameters.Reward == 'Selene' then
-			createdRoomData.ForcedRewards = {
-				{
-					Name = 'SpellDrop',
-				},
-			}
-		elseif roomParameters.Reward == 'Hammer' then
-			createdRoomData.ForcedRewards = {
-				{
-					Name = 'WeaponUpgrade',
-				},
-			}
-		elseif roomParameters.Reward == 'Devotion' then
-			createdRoomData.ForcedRewards = {
-				{
-					--@todo this does not work to force the gods
-					Name = 'Devotion',
-					LootAName = roomParameters.LootAName .. 'Upgrade',
-					LootBName = roomParameters.LootBName .. 'Upgrade',
-				},
-			}
-		elseif roomParameters.Reward == 'Pom' then
-			createdRoomData.ForcedRewards = {
-				{
-					Name = 'StackUpgrade',
-				},
-			}	
-		elseif roomParameters.Reward then
-			createdRoomData.ForcedRewards = {
-				{
-					Name = roomParameters.Reward,
-				},
-			}
-		end
-
-		if string.find(roomParameters.Name, '_Shop') then
-			createdRoomData.IsShop = true
-			-- Handle Zagreus contract spawn in shop, set in the global StoreData variable
-			if roomParameters.IsZagreusForced then
-				StoreData.ZagreusContractRequirement.ChanceToPlay = 1
-			else
-				StoreData.ZagreusContractRequirement.ChanceToPlay = 0
+function MyRunStateInit()
+	-- Load every Rooms from the RunParameters
+	for biomeName, biome in pairs(RunParameters.Biomes) do
+		for roomDepth, rooms in pairs(biome.Rooms) do
+			for roomNumber, room in pairs(rooms) do
+				_populateRoomData(biomeName, roomDepth, roomNumber)
 			end
-		elseif string.find(roomParameters.Name, '_Combat') then
-			createdRoomData.IsCombat = true
-		elseif string.find(roomParameters.Name, '_Opening') then
-			rom.log.warning('IS OPENING')
-			createdRoomData.IsOpening = true
-		elseif string.find(roomParameters.Name, '_PostBoss') then
-			createdRoomData.IsEndBiome = true
 		end
+	end
 
-		-- Set created room parameters
-		createdRoomData.IsGenerated = true
-		createdRoomData.UniqueId = roomParameters.UniqueId
-		createdRoomData.BiomeName = roomParameters.BiomeName
-		createdRoomData.BaseRoomName = createdRoomData.Name
-
-		-- Set a Unique RoomData name, and add it to the global variables list of rooms
-		createdRoomData.Name = createdRoomData.UniqueId
-
-		rom.log.warning('Room added to RoomData[] ' .. createdRoomData.UniqueId)
-		AddTableKeysCheckDupes( RoomData, {createdRoomData} )
-
-		return createdRoomData
+	-- Force rooms Flip : also check the User not in the Hub (since the game stores CurrentRun as the last run)
+	if not game.CurrentHubRoom and game.CurrentRun and game.CurrentRun.CurrentRoom and game.CurrentRun.CurrentRoom.Flipped then
+		game.SetConfigOption({ Name = "FlipMapThings", Value = true })
 	else
-		return nil
+		game.SetConfigOption({ Name = "FlipMapThings", Value = false })
 	end
 end
 
-function _getRunParametersForRoom(room)
-	local roomName = room.Name
-	local biomeName = room.RoomSetName
-
-	if biomeName == 'Chaos' then
-		-- Check in all ChaosRooms
-		for k, biomeParameters in pairs(RunParameters.Biomes) do
-			if biomeParameters.ChaosRooms then
-				for k2, roomParameters in pairs(biomeParameters.ChaosRooms) do
-					if roomParameters and roomParameters.Name == roomName then
-						return roomParameters
-					end
-				end
-			end
-		end
-	else
-		-- Check in Rooms
-		if RunParameters.Biomes[biomeName] then
-			for k, rooms in pairs(RunParameters.Biomes[biomeName].Rooms) do
-				for k2, roomParameters in pairs(rooms) do
-					if roomParameters and roomParameters.Name == roomName then
-						-- Biome+RoomName+RoomReward exists and match, return the room
-						if room.ForcedReward and room.ForcedReward.Name == roomParameters.Reward then
-							return roomParameters
-						elseif room.ChosenRewardType == 'Shop' and  string.find(roomName, '_PreBoss') then
-							return roomParameters
-						elseif #rooms == 1 then
-							-- Biome+RoomName match and this is the only room, return the room
-							return roomParameters
-						end
-					end
-				end
-			end
-		end
-	end
-
-	
-
-	return nil
-end
-
-function _getRunParametersStartingRoom()
-	--@todo handle not F starting Biome
-
-	local startingBiomeName = 'F'
-	local startingRoom = RunParameters.Biomes[startingBiomeName].Rooms[1][1]
-	startingRoom.UniqueId = startingBiomeName .. '_1_1'
-	startingRoom.BiomeName = startingBiomeName
-
-	return RunParameters.Biomes[startingBiomeName].Rooms[1][1]
-end
-
-function _getRunParametersNextRoom(biomeName, roomName)
-	if biomeName == 'Chaos' then
-		-- Handle specific Chaos Biome, find the last ChaosRoom with this name that has been generated
-		for tmpBiomeName, biomeParameters in pairs(RunParameters.Biomes) do
-			if biomeParameters.ChaosRooms then 
-				for k, chaosRoom in pairs(biomeParameters.ChaosRooms) do
-					if chaosRoom.Name == roomName then
-						-- For each Rooms of the same biome, return the first not generated Room
-						for k2, rooms in pairs(biomeParameters.Rooms) do
-							for k3, nextRoom in pairs(rooms) do
-								if not nextRoom.IsGenerated then
-									RunParameters.Biomes[tmpBiomeName].Rooms[k2][k3].IsGenerated = true
-									return nextRoom
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-	else
-		-- Regular Rooms
-		for k, rooms in pairs(RunParameters.Biomes[biomeName].Rooms) do
-			for k2, room in pairs(rooms) do
-				if room and room.Name == roomName then
-					if string.find(roomName, '_PostBoss') then
-						--PostBoss room, return the next biome first room
-						local nextBiomeName = _getNextBiomeName(biomeName)
-						RunParameters.Biomes[nextBiomeName].Rooms[1][1].IsGenerated = true
-						return RunParameters.Biomes[nextBiomeName].Rooms[1][1]
-					else
-						for k3, nextRoom in pairs(RunParameters.Biomes[biomeName].Rooms[k+1]) do
-							-- Add properties to the room to generate
-							if not nextRoom.IsGenerated then
-								nextRoom.UniqueId = biomeName .. '_' .. (k+1) .. '_' .. k3
-								nextRoom.BiomeName = biomeName
-
-								return nextRoom
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-
-	return nil
-end
-
-function _getRunParametersNextChaosRoom(biomeName, roomName)
-	if RunParameters.Biomes[biomeName].ChaosRooms then
-		for k, room in pairs(RunParameters.Biomes[biomeName].ChaosRooms) do
-			if not room.IsGenerated then
-				RunParameters.Biomes[biomeName].ChaosRooms[k].IsGenerated = true
-				local nextChaosRoom = RunParameters.Biomes[biomeName].ChaosRooms[k]
-
-				return nextChaosRoom
-			end
-		end
-	end
-
-	return nil
-end
-
-function _getBiomeName(currentRoom)
-	if string.find(currentRoom.Name, 'Chaos') then
-		return 'Chaos'
-	else
-		return string.sub(currentRoom.Name, 0, 1)
-	end
+function _getBiomeName(room)
+	return room.RoomSetName
 end
 
 function _getNextBiomeName(biomeName)
@@ -686,40 +504,202 @@ function _getNextBiomeName(biomeName)
 	end
 end
 
+-- Get the generated RunParameters room name
+function _getRoomName(biome, roomDepth, roomNumber)
+	return biome .. '_' .. roomDepth .. '_' .. roomNumber
+end
+
+-- Get the RunParameters room from it's name
+function _getParametersRoomFromName(roomName)
+	local keys = _getParametersKeysFromName(roomName)
+
+	if keys.BiomeName and keys.RoomDepth and keys.RoomNumber then
+		if RunParameters.Biomes[keys.BiomeName] and RunParameters.Biomes[keys.BiomeName].Rooms[keys.RoomDepth] and RunParameters.Biomes[keys.BiomeName].Rooms[keys.RoomDepth][keys.RoomNumber] then
+			return RunParameters.Biomes[keys.BiomeName].Rooms[keys.RoomDepth][keys.RoomNumber]
+		end
+	end
+
+	return nil
+end
+
+function _getParametersKeysFromName(roomName)
+	local roomParametersKey = {}
+	for token in string.gmatch(roomName, "[^_]+") do
+		table.insert(roomParametersKey, token)
+	end
+
+	local biomeName = roomParametersKey[1]
+	local roomDepth = tonumber(roomParametersKey[2])
+	local roomNumber = tonumber(roomParametersKey[3])
+
+	return {
+		BiomeName = biomeName,
+		RoomDepth = roomDepth,
+		RoomNumber = roomNumber
+	}
+end
+
+-- Return the base/original Name of the generated room
+function _getRoomBaseName(roomName)
+	local room = _getParametersRoomFromName(roomName)
+
+	if room then
+		return room.Name
+	else
+		rom.log.warning('LoadMap name incorrect, not normal, should maybe generate an error/exception: ' .. roomName)
+		return nil
+	end
+end
+
+
+-- Populate the room data, should only be called once at initialisation
+function _populateRoomData(biomeName, roomDepth, roomNumber)
+	local roomParameters = RunParameters.Biomes[biomeName].Rooms[roomDepth][roomNumber]
+
+	-- Create a copy of the base room
+	local createdRoomData = game.DeepCopyTable(game.RoomData[roomParameters.Name])
+
+	-- Handle Chaos chance
+	if roomParameters.IsForcedChaos then
+		createdRoomData.SecretSpawnChance = 1
+	else
+		createdRoomData.SecretSpawnChance = 0
+	end
+
+	-- Handle Well chance
+	if roomParameters.IsForcedWell then
+		createdRoomData.ForceWellShop = 1
+		createdRoomData.WellShopSpawnChance = 1
+	else
+		createdRoomData.WellShopSpawnChance = 0
+	end
+
+	-- Force the reward
+	if roomParameters.Reward == 'Boon' then
+		createdRoomData.ForcedRewards = {
+			{
+				Name = roomParameters.Reward,
+				LootName = roomParameters.BoonGod .. 'Upgrade',
+			},
+		}
+	elseif roomParameters.Reward == 'Selene' then
+		createdRoomData.ForcedRewards = {
+			{
+				Name = 'SpellDrop',
+			},
+		}
+	elseif roomParameters.Reward == 'Hammer' then
+		createdRoomData.ForcedRewards = {
+			{
+				Name = 'WeaponUpgrade',
+			},
+		}
+	elseif roomParameters.Reward == 'Devotion' then
+		createdRoomData.ForcedRewards = {
+			{
+				--@todo this does not work to force the gods
+				Name = 'Devotion',
+				LootAName = roomParameters.LootAName .. 'Upgrade',
+				LootBName = roomParameters.LootBName .. 'Upgrade',
+			},
+		}
+	elseif roomParameters.Reward == 'Pom' then
+		createdRoomData.ForcedRewards = {
+			{
+				Name = 'StackUpgrade',
+			},
+		}
+	elseif roomParameters.Reward then
+		createdRoomData.ForcedRewards = {
+			{
+				Name = roomParameters.Reward,
+			},
+		}
+	end
+
+	-- Specific case of Shop
+	if string.find(roomParameters.Name, '_Shop') then
+		createdRoomData.IsShop = true
+		-- Handle Zagreus contract spawn in shop, set in the global StoreData variable
+		if roomParameters.IsZagreusForced then
+			game.StoreData.ZagreusContractRequirement.ChanceToPlay = 1
+		else
+			game.StoreData.ZagreusContractRequirement.ChanceToPlay = 0
+		end
+	elseif string.find(roomParameters.Name, '_Combat') then
+		createdRoomData.IsCombat = true
+	elseif string.find(roomParameters.Name, '_Opening') then
+		createdRoomData.IsOpening = true
+	elseif string.find(roomParameters.Name, '_PostBoss') then
+		createdRoomData.IsEndBiome = true
+	elseif '_Shop' then
+		createdRoomData.IsShop = true
+	end
+
+	-- Set created room parameters
+	createdRoomData.IsPopulated = true
+	createdRoomData.IsGenerated = false
+	createdRoomData.UniqueId = _getRoomName(biomeName, roomDepth, roomNumber)
+	createdRoomData.Cocoons = roomParameters.Cocoons
+	createdRoomData.GoldPots = roomParameters.GoldPots
+	createdRoomData.SpawnWaves = roomParameters.SpawnWaves
+	createdRoomData.EncounterName = roomParameters.Encounter
+	createdRoomData.ShopContent = roomParameters.ShopContent
+	createdRoomData.WellContent = roomParameters.WellContent
+	createdRoomData.WellSpawnOnIdKey = roomParameters.WellSpawnOnIdKey
+	createdRoomData.Flipped = roomParameters.IsFlipped or false
+
+	-- Boss Name/Parameter
+	createdRoomData.BossName = roomParameters.BossName
+	createdRoomData.BossParameter = roomParameters.BossParameter
+
+	-- The RoomSetName must be set manually
+	createdRoomData.RoomSetName = biomeName
+	createdRoomData.BaseRoomName = createdRoomData.Name
+
+	-- Set a Unique RoomData name, and add it to the global variables list of rooms
+	createdRoomData.Name = createdRoomData.UniqueId
+	--rom.log.warning('Room added to RoomData[] ' .. createdRoomData.UniqueId)
+	game.RoomData[createdRoomData.UniqueId] = createdRoomData
+
+	return game.RoomData[createdRoomData.UniqueId]
+end
+
+
 --------------------------------------------------------------
 --------------------------------------------------------------
 --- Core functions modified, check @modified for the modified part
 --------------------------------------------------------------
 --------------------------------------------------------------
-function MyGetNextSpawn( encounter )
+function MyGetNextSpawn(encounter)
 	local forcedSpawn = nil
 	local remainingSpawnInfo = {}
 	local remainingPrioritySpawnInfo = {}
 	local remainingPriorityGroupSpawnInfo = {}
-	for k, spawnInfo in orderedPairs( encounter.Spawns ) do
+	for k, spawnInfo in orderedPairs(encounter.Spawns) do
 		if spawnInfo.InfiniteSpawns or spawnInfo.RemainingSpawns > 0 then
 			local enemyData = EnemyData[spawnInfo.Name]
 			if enemyData ~= nil and enemyData.LargeUnitCap ~= nil and enemyData.LargeUnitCap > 0 then
 				local largeUnitCount = 0
-				for enemyId, enemy in pairs( ShallowCopyTable( ActiveEnemies ) ) do
+				for enemyId, enemy in pairs(ShallowCopyTable(ActiveEnemies)) do
 					if enemy.LargeUnitCap ~= nil and enemyData.LargeUnitCap > 0 then
 						largeUnitCount = largeUnitCount + 1
 					end
 				end
 				if largeUnitCount < enemyData.LargeUnitCap then
-					table.insert( remainingSpawnInfo, spawnInfo )
+					table.insert(remainingSpawnInfo, spawnInfo)
 					if spawnInfo.PrioritySpawn then
-						table.insert( remainingPrioritySpawnInfo, spawnInfo )
+						table.insert(remainingPrioritySpawnInfo, spawnInfo)
 					end
 				else
-					DebugPrint({ Text = "Avoiding LargeUnitCap: "..enemyData.Name })
+					DebugPrint({ Text = "Avoiding LargeUnitCap: " .. enemyData.Name })
 				end
 			else
-				table.insert( remainingSpawnInfo, spawnInfo )
+				table.insert(remainingSpawnInfo, spawnInfo)
 				if spawnInfo.PrioritySpawn then
-					table.insert( remainingPrioritySpawnInfo, spawnInfo )
+					table.insert(remainingPrioritySpawnInfo, spawnInfo)
 				elseif encounter.PrioritizeGroup ~= nil and enemyData ~= nil and Contains(enemyData.Groups, encounter.PrioritizeGroup) then
-					table.insert( remainingPriorityGroupSpawnInfo, spawnInfo )
+					table.insert(remainingPriorityGroupSpawnInfo, spawnInfo)
 				end
 			end
 
@@ -748,16 +728,17 @@ function MyGetNextSpawn( encounter )
 			remaining = remainingSpawnInfo
 		end
 
-		for k,remainingSpawn in pairs(remaining) do
+		for k, remainingSpawn in pairs(remaining) do
 			if remainingSpawn.Name == spawnName then
 				randomSpawnInfo = remaining[k]
 				break
 			end
 		end
-		
+
 		if randomSpawnInfo == nil then
 			rom.log.warning('randomSpawnInfo == nil') -- should not happen, debug
-			randomSpawnInfo = remainingPrioritySpawnInfo[1] or remainingPriorityGroupSpawnInfo[1] or remainingSpawnInfo[1]
+			randomSpawnInfo = remainingPrioritySpawnInfo[1] or remainingPriorityGroupSpawnInfo[1] or
+			remainingSpawnInfo[1]
 		end
 	else
 		--  @modified Remove randomness
@@ -811,8 +792,10 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 		shuffledSpawnPointIds = FYShuffle(ids)
 	elseif enemy.PreferredSpawnPoint ~= nil then
 		if currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] == nil then
-			currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] = ShallowCopyTable(GetIdsByType({ Name = enemy
-			.PreferredSpawnPoint }))
+			currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] = ShallowCopyTable(GetIdsByType({
+				Name = enemy
+					.PreferredSpawnPoint
+			}))
 		end
 		-- @modified Remove shuffle randomness
 		shuffledSpawnPointIds = currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] or MapState.SpawnPoints
@@ -825,7 +808,7 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 
 	-- Handle forced spawn position
 	local spawnOnIdKeys = nil
-	if  encounter.Spawns and encounter.Spawns[enemy.Name] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'] then
+	if encounter.Spawns and encounter.Spawns[enemy.Name] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'] then
 		-- Combat forced position
 		spawnOnIdKeys = encounter.Spawns[enemy.Name]['SpawnOnIdKeys']
 	elseif enemy.SpawnOnIdKey then
@@ -922,36 +905,34 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 	end
 end
 
-function MySetupArachneCombatEncounter( eventSource, args )
-	SpawnArachneCocoons( eventSource, args )
+function MySetupArachneCombatEncounter(eventSource, args)
+	game.SpawnArachneCocoons(eventSource, args)
 
 	-- @modified Force the reward Cocoon
 	-- local roomRewardCocoon = MapState.ActiveObstacles[GetRandomValue(CurrentRun.CurrentRoom.CoocoonIds)]
-	local roomRewardCocoon = MapState.ActiveObstacles[CurrentRun.CurrentRoom.CoocoonIds[1]]
+	local roomRewardCocoon = game.MapState.ActiveObstacles[game.CurrentRun.CurrentRoom.CoocoonIds[1]]
 
 	roomRewardCocoon.OnDeathFunctionName = "SpawnRoomReward"
 	roomRewardCocoon.OnDeathFunctionArgs = { NofifyWaitersName = "ArachneRewardFound" }
 	roomRewardCocoon.OnDeathThreadedFunctionName = "ArachneCombatRewardSpawnPresentation"
 	roomRewardCocoon.SpawnUnitOnDeath = nil
 	roomRewardCocoon.OnKillVoiceLines = GlobalVoiceLines.PositiveReactionVoiceLines
-	CurrentRun.CurrentRoom.SpawnRewardOnId = roomRewardCocoon.ObjectId
+	game.CurrentRun.CurrentRoom.SpawnRewardOnId = roomRewardCocoon.ObjectId
 end
 
-function MySpawnArachneCocoons( eventSource, args )
+function MySpawnArachneCocoons(eventSource, args)
 	-- @modified
-	local currentBiomeName = _getBiomeName(CurrentRun.CurrentRoom)
-	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
-
 	local forcedCocoons
-	if currentRoom then 
-		forcedCocoons = currentRoom.Cocoons
+	if game.CurrentRun.CurrentRoom then
+		forcedCocoons = game.CurrentRun.CurrentRoom.Cocoons
 	end
 
 	local cocoonIds = {}
 	if forcedCocoons then
 		-- No more randomness
-		for k,forcedCocoon in pairs(forcedCocoons) do
-			local spawnPointId = SelectSpawnPoint(CurrentRun.CurrentRoom, { PreferredSpawnPoint = "EnemyPoint", RequiredSpawnPoint = nil, SpawnOnIdKey = forcedCocoon.SpawnOnIdKey } )
+		for k, forcedCocoon in pairs(forcedCocoons) do
+			local spawnPointId = game.SelectSpawnPoint(game.CurrentRun.CurrentRoom,
+				{ PreferredSpawnPoint = "EnemyPoint", RequiredSpawnPoint = nil, SpawnOnIdKey = forcedCocoon.SpawnOnIdKey })
 			if spawnPointId == nil then
 				return
 			end
@@ -959,21 +940,21 @@ function MySpawnArachneCocoons( eventSource, args )
 			local cocoonName = 'ArachneCocoon'
 			-- Small cocoons have no suffix
 			if forcedCocoon.Name ~= 'Small' then
-				cocoonName = cocoonName..forcedCocoon.Name
+				cocoonName = cocoonName .. forcedCocoon.Name
 			end
 			-- Oceanus cocoons are named differently
-			if currentBiomeName == 'G' then
-				cocoonName = cocoonName..'_G'
+			if _getBiomeName(game.CurrentRun.CurrentRoom) == 'G' then
+				cocoonName = cocoonName .. '_G'
 			end
 
-			local cocoonId = SpawnObstacle({ DestinationId = spawnPointId, Name = cocoonName, Group = "Standing", TriggerOnSpawn = false })
-			local cocoon = DeepCopyTable( ObstacleData[cocoonName] )
+			local cocoonId = game.SpawnObstacle({ DestinationId = spawnPointId, Name = cocoonName, Group = "Standing", TriggerOnSpawn = false })
+			local cocoon = game.DeepCopyTable(game.ObstacleData[cocoonName])
 			cocoon.ObjectId = cocoonId
 			cocoon.OccupyingSpawnPointId = spawnPointId
 			table.insert(cocoonIds, cocoonId)
-			SetupObstacle( cocoon )
-			AddAutoLockTarget({ Id = cocoonId })
-			CurrentRun.CurrentRoom.CoocoonIds = cocoonIds
+			game.SetupObstacle(cocoon)
+			game.AddAutoLockTarget({ Id = cocoonId })
+			game.CurrentRun.CurrentRoom.CoocoonIds = cocoonIds
 		end
 		return true
 	else
@@ -981,23 +962,22 @@ function MySpawnArachneCocoons( eventSource, args )
 	end
 end
 
-function MyArachneCostumeChoice( source, args, screen )
-
+function MyArachneCostumeChoice(source, args, screen)
 	RemoveInputBlock({ Name = "PlayTextLines" })
 
-	RandomSynchronize( 9 )
+	RandomSynchronize(9)
 
 	source.UpgradeOptions = {}
 	source.BlockReroll = true
 
 	--@modified, no more randomness
-	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	local currentRoom = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 
 	local isForcedTrait = false
 	if currentRoom and currentRoom.Traits then
 		isForcedTrait = true
 		source.UpgradeOptions = {}
-		for k,traitName in pairs(currentRoom.Traits) do
+		for k, traitName in pairs(currentRoom.Traits) do
 			table.insert(source.UpgradeOptions, {
 				ItemName = traitName,
 				Type = 'Trait',
@@ -1007,8 +987,8 @@ function MyArachneCostumeChoice( source, args, screen )
 	end
 
 	if isForcedTrait then
-		MedeaCursePreChoicePresentation( source, args )
-		OpenUpgradeChoiceMenu( source, args )
+		MedeaCursePreChoicePresentation(source, args)
+		OpenUpgradeChoiceMenu(source, args)
 
 		screen.OnCloseFinishedFunctionName = "ArachneArmorApply"
 
@@ -1020,7 +1000,7 @@ function MyArachneCostumeChoice( source, args, screen )
 	end
 end
 
-function MyHandleBreakableSwap( currentRoom, args )
+function MyHandleBreakableSwap(currentRoom, args)
 	local roomBreakableData = RoomData[currentRoom.Name].BreakableValueOptions
 	if roomBreakableData == nil then
 		return
@@ -1028,43 +1008,45 @@ function MyHandleBreakableSwap( currentRoom, args )
 	args = args or {}
 	local legalBreakables = FindAllSwappableBreakables()
 	local highValueLimit = roomBreakableData.MaxHighValueBreakables or 1
-	if highValueLimit == 0 or IsEmpty( legalBreakables ) then
+	if highValueLimit == 0 or IsEmpty(legalBreakables) then
 		return
 	end
-	if TableLength( legalBreakables ) < highValueLimit then
-		highValueLimit = TableLength( legalBreakables )
+	if TableLength(legalBreakables) < highValueLimit then
+		highValueLimit = TableLength(legalBreakables)
 	end
 
 	local chanceMultiplier = 1.0
 	if RoomData[currentRoom.Name].BreakableHighValueChanceMultiplier ~= nil then
 		chanceMultiplier = chanceMultiplier * RoomData[currentRoom.Name].BreakableHighValueChanceMultiplier
 	end
-	
+
 	CurrentRun.CurrentRoom.HighValueBreakableIds = {}
 	--@modified = loop start a 1 to generate N pot of gold instead of N+1
 	for index = 1, highValueLimit, 1 do
-		local breakable = RemoveRandomValue( legalBreakables )
+		local breakable = RemoveRandomValue(legalBreakables)
 		if breakable == nil then
 			return
 		end
 		local valueOptions = breakable.BreakableValueOptions
-		for k, swapOption in ipairs( valueOptions ) do
-			if swapOption.GameStateRequirements == nil or IsGameStateEligible( swapOption, swapOption.GameStateRequirements ) then
-				if RandomChance( swapOption.Chance * chanceMultiplier ) then
+		for k, swapOption in ipairs(valueOptions) do
+			if swapOption.GameStateRequirements == nil or IsGameStateEligible(swapOption, swapOption.GameStateRequirements) then
+				if RandomChance(swapOption.Chance * chanceMultiplier) then
 					if swapOption.Animation ~= nil then
-						SetAnimation({ DestinationId = breakable.ObjectId, Name = swapOption.Animation, OffsetY = swapOption.OffsetY or 0 })
+						SetAnimation({ DestinationId = breakable.ObjectId, Name = swapOption.Animation, OffsetY =
+						swapOption.OffsetY or 0 })
 					end
-					table.insert( CurrentRun.CurrentRoom.HighValueBreakableIds, breakable.ObjectId )
-					RecordObjectState( currentRoom, breakable.ObjectId, "Animation", swapOption.Animation )
-					breakable.MoneyDropOnDeath = ShallowCopyTable( swapOption.MoneyDropOnDeath )
-					RecordObjectState( currentRoom, breakable.ObjectId, "MoneyDropOnDeath", breakable.MoneyDropOnDeath )
-					DebugPrint({ Text = "HandleBreakableSwap: an up-valued breakable spawned at Id "..breakable.ObjectId })
+					table.insert(CurrentRun.CurrentRoom.HighValueBreakableIds, breakable.ObjectId)
+					RecordObjectState(currentRoom, breakable.ObjectId, "Animation", swapOption.Animation)
+					breakable.MoneyDropOnDeath = ShallowCopyTable(swapOption.MoneyDropOnDeath)
+					RecordObjectState(currentRoom, breakable.ObjectId, "MoneyDropOnDeath", breakable.MoneyDropOnDeath)
+					DebugPrint({ Text = "HandleBreakableSwap: an up-valued breakable spawned at Id " ..
+					breakable.ObjectId })
 					OverwriteTableKeys(breakable, swapOption.DataOverrides)
 					for k, v in pairs(swapOption.DataOverrides) do
-						RecordObjectState( CurrentRun.CurrentRoom, breakable.ObjectId, k, v )
+						RecordObjectState(CurrentRun.CurrentRoom, breakable.ObjectId, k, v)
 					end
 					if breakable.BreakableValueOptions.SetupEvents ~= nil then
-						RunEventsGeneric( breakable.BreakableValueOptions.SetupEvents, breakable )
+						RunEventsGeneric(breakable.BreakableValueOptions.SetupEvents, breakable)
 					end
 					break
 				end
@@ -1081,18 +1063,18 @@ function MyUnwrapRandomLoot(source)
 	local obstacleId = SpawnObstacle({ Name = "InvisibleTarget", DestinationId = spawnId })
 
 	-- @modified, force the god
-	local tmpArgs = { SpawnPoint = obstacleId}
+	local tmpArgs = { SpawnPoint = obstacleId }
 	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
 	if currentRoom and currentRoom.ShopContent then
 		for k, shopOption in pairs(currentRoom.ShopContent) do
 			if shopOption.Reward == 'RandomBoon' then
-				tmpArgs = { SpawnPoint = obstacleId, ForceLootName = shopOption.BoonGod..'Upgrade' }
+				tmpArgs = { SpawnPoint = obstacleId, ForceLootName = shopOption.BoonGod .. 'Upgrade' }
 				break
 			end
 		end
 	end
 	local reward = GiveLoot(tmpArgs)
-	
+
 	SetObstacleProperty({ Property = "MagnetismWhileBlocked", Value = 0, DestinationId = reward.ObjectId })
 
 	reward.BoughtFromShop = true
@@ -1102,7 +1084,7 @@ function MyUnwrapRandomLoot(source)
 	reward.WasRandomLoot = true
 	reward.MakeUpTextLines = nil
 	UseableOff({ Id = reward.ObjectId })
-	UnwrapLootPresentation( reward )
+	UnwrapLootPresentation(reward)
 	Destroy({ Id = obstacleId })
 	wait(0.5)
 	UseableOn({ Id = reward.ObjectId })
@@ -1113,7 +1095,7 @@ function MyUnwrapRandomLoot(source)
 	RunWeaponMethod({ Id = CurrentRun.Hero.ObjectId, Weapon = "All", Method = "ForceControlRelease" })
 
 	RemoveInputBlock({ Name = "RandomLoot" })
-	HideUseButton( reward.ObjectId, reward, 0 )
+	HideUseButton(reward.ObjectId, reward, 0)
 end
 
 function MyApplyScyllaFightSpotlight(scylla, args)
@@ -1163,7 +1145,7 @@ function MyApplyScyllaFightSpotlight(scylla, args)
 	end
 	MapState.SpotlightUnitId = flagData.Id
 
-	thread( SetMapFlag, flagData)
+	thread(SetMapFlag, flagData)
 
-	thread( ScyllaSpotlightPresentation, flagData, scylla )
+	thread(ScyllaSpotlightPresentation, flagData, scylla)
 end
