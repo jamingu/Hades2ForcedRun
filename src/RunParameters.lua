@@ -10,14 +10,18 @@ RunParameters = {
 					{
 						Name = 'F_Opening03',
 						Encounter = 'OpeningGeneratedF',
-						-- No forced God to allow other aspects to run with their preferred setup
-						--Reward = 'Boon',
-						--BoonGod = 'Zeus',
-						Traits = {
+						Rewards = {
 							{
-								{ Name = 'Special', Rarity = 'Epic' },
-								{ Name = 'Sprint', Rarity = 'Common' },
-								{ Name = 'Mana', Rarity = 'Rare' },
+								-- No forced God to allow other aspects to run with their preferred setup
+								--Name = 'Boon',
+								--BoonGod = 'Zeus',
+								Traits = {
+									{
+										{ Name = 'Special', Rarity = 'Epic' },
+										{ Name = 'Sprint', Rarity = 'Common' },
+										{ Name = 'Mana', Rarity = 'Rare' },
+									}
+								},
 							}
 						},
 						SpawnWaves = {
@@ -33,7 +37,9 @@ RunParameters = {
 				{
 					{
 						Name = 'F_Combat03',
-						Reward = 'MetaCardPointsCommonDrop',
+						Rewards = {
+							{ Name = 'MetaCardPointsCommonDrop' }
+						},
 						SpawnWaves = {
 							{
 								Spawns = {
@@ -48,19 +54,23 @@ RunParameters = {
 				{
 					{
 						Name = 'F_Combat10',
-						Reward = 'Boon',
-						BoonGod = 'Hestia',
-						Traits = {
+						Rewards = {
 							{
-								{ Name = 'Sprint', Rarity = 'Common' },
-								{ Name = 'CastProjectile', Rarity = 'Common' },
-								{ Name = 'FireballManaSpecial', Rarity = 'Rare' },
-							},
-							{
-								{ Name = 'Weapon', Rarity = 'Common' },
-								{ Name = 'Cast', Rarity = 'Common' },
-								{ Name = 'BurnExplode', Rarity = 'Common' },
-							},
+								Name = 'Boon',
+								BoonGod = 'Hestia',
+								Traits = {
+									{
+										{ Name = 'Sprint', Rarity = 'Common' },
+										{ Name = 'CastProjectile', Rarity = 'Common' },
+										{ Name = 'FireballManaSpecial', Rarity = 'Rare' },
+									},
+									{
+										{ Name = 'Weapon', Rarity = 'Common' },
+										{ Name = 'Cast', Rarity = 'Common' },
+										{ Name = 'BurnExplode', Rarity = 'Common' },
+									},
+								},
+							}
 						},
 						SpawnWaves = {
 							{
@@ -79,13 +89,17 @@ RunParameters = {
 					},
 					{
 						Name = 'F_Combat10',
-						Reward = 'Pom'
+						Rewards = {
+							{ Name = 'Pom' }
+						},
 					},
 				},
 				{
 					{
 						Name = 'F_Combat21',
-						Reward = 'RoomMoneyDrop',
+						Rewards = {
+							{ Name = 'RoomMoneyDrop' }
+						},
 						GoldPots = {Count = 2},
 						SpawnWaves = {
 							{
@@ -105,12 +119,16 @@ RunParameters = {
 				{
 					{
 						Name = 'F_Combat10',
-						Reward = 'MetaCardPointsCommonDrop'
+						Rewards = {
+							{ Name = 'MetaCardPointsCommonDrop' }
+						},
 					},
 					{
 						Name = 'F_Combat05',
 						Encounter = 'ArachneCombatF',
-						Reward = 'GiftDrop',
+						Rewards = {
+							{ Name = 'GiftDrop' }
+						},
 						Cocoons = {
 							{Name = 'Small', SpawnOnIdKey = 1},
 							{Name = 'Small', SpawnOnIdKey = 2},
@@ -136,33 +154,40 @@ RunParameters = {
 					{
 						Name = 'F_MiniBoss03',
 						IsFlipped = true,
-						Reward = 'Boon',
-						BoonGod = 'Hera',
-						GoldPots = {Count = 1},
-						Traits = {
+						Rewards = {
 							{
-								{ Name = 'Cast', Rarity = 'Epic' },
-								{ Name = 'Sprint', Rarity = 'Rare' },
-								{ Name = 'DamageShareRetaliate', Rarity = 'Rare' },
-							},
-							{
-								{ Name = 'Attack', Rarity = 'Rare' },
-								{ Name = 'Sprint', Rarity = 'Epic' },
-								{ Name = 'OmegaHeraProjectile', Rarity = 'Rare' },
-							},
+								Name = 'Boon',
+								BoonGod = 'Hera',
+								Traits = {
+									{
+										{ Name = 'Cast', Rarity = 'Epic' },
+										{ Name = 'Sprint', Rarity = 'Rare' },
+										{ Name = 'DamageShareRetaliate', Rarity = 'Rare' },
+									},
+									{
+										{ Name = 'Attack', Rarity = 'Rare' },
+										{ Name = 'Sprint', Rarity = 'Epic' },
+										{ Name = 'OmegaHeraProjectile', Rarity = 'Rare' },
+									},
+								},
+							}
 						},
+						GoldPots = {Count = 1}
 					},
 					{
 						Name = 'F_MiniBoss03',
-						Reward = 'Boon',
-						BoonGod = 'Demeter',
+						Rewards = {
+							{ Name = 'Boon', BoonGod = 'Demeter' }
+						},
 					},
 				},
 				{
 					{
 						Name = 'F_Combat16',
 						Encounter = 'ArtemisCombatF',
-						Reward = 'MaxManaDrop',
+						Rewards = {
+							{ Name = 'MaxManaDrop' }
+						},
 						GoldPots = {Count = 1},
 						IsFlipped = true,
 						ArtemisTraits = {
@@ -230,23 +255,31 @@ RunParameters = {
 					},
 					{
 						Name = 'F_Combat02',
-						Reward = 'MetaCardPointsCommonDrop'
+						Rewards = {
+							{ Name = 'MetaCardPointsCommonDrop' }
+						},
 					},
 				},
 				{
 					{
 						Name = 'F_Reprieve01',
-						Reward = 'Pom',
+						Rewards = {
+							{ Name = 'Pom' }
+						},
 					},
 					{
 						Name = 'F_Reprieve01',
-						Reward = 'MaxManaDrop',
+						Rewards = {
+							{ Name = 'MaxManaDrop' }
+						},
 					}
 				},
 				{
 					{
 						Name = 'F_Combat02',
-						Reward = 'Selene',
+						Rewards = {
+							{ Name = 'Selene' }
+						},
 					},
 					{
 						Name = 'F_Story01',
@@ -256,7 +289,9 @@ RunParameters = {
 				{
 					{
 						Name = 'F_Combat14',
-						Reward = 'RoomMoneyDrop',
+						Rewards = {
+							{ Name = 'RoomMoneyDrop' }
+						},
 						IsFlipped = true,
 						SpawnWaves = {
 							{
@@ -272,7 +307,9 @@ RunParameters = {
 					},
 					{
 						Name = 'F_Combat14',
-						Reward = 'MaxHealthDrop',
+						Rewards = {
+							{ Name = 'MaxHealthDrop' }
+						},
 					},
 				},
 				{
@@ -292,18 +329,15 @@ RunParameters = {
 									},
 								},
 							},
-							{
-								Reward = 'HealDropMajor',
-							},
-							{
-								Reward = 'MaxManaDrop',
-							}
+							{ Reward = 'HealDropMajor' },
+							{ Reward = 'MaxManaDrop' }
 						}
 					},
 					{
-						Name = 'F_PreBoss01',
-						Reward = 'Boon',
-						BoonGod = 'Hermes',
+						Name = 'F_PreBoss01',						
+						Rewards = {
+							{ Name = 'Boon', BoonGod = 'Hermes' }
+						},
 					},
 				},
 				{
@@ -353,13 +387,17 @@ RunParameters = {
 				{
 					{
 						Name = 'G_Combat01',
-						Reward = 'MetaCardPointsCommonDrop',
+						Rewards = {
+							{ Name = 'MetaCardPointsCommonDrop' }
+						},
 					}
 				},
 				{
 					{
 						Name = 'G_Combat07',
-						Reward = 'MetaCurrencyDrop',
+						Rewards = {
+							{ Name = 'MetaCurrencyDrop' }
+						},
 						SpawnWaves = {
 							{
 								Spawns = {
@@ -368,80 +406,93 @@ RunParameters = {
 							}
 						}
 					}
-				},]]
+				},
 				{
-					--[[{
+					{
 						Name = 'G_Combat01',
-						Reward = 'MetaCurrencyDrop',
-					},]]
+						Rewards = {
+							{ Name = 'MetaCurrencyDrop' }
+						},
+					},
 					{
 						Name = 'G_Shop01',
 						IsNemesisForced = false,
 						IsZagreusForced = true,
 						IsFlipped = true,
 						ShopContent = {
-							{
-								Reward = 'Boon',
-								BoonGod = 'Aphrodite',
-							},
-							{
-								Reward = 'MetaCurrencyDrop',
-							},
-							{
-								Reward = 'MaxManaDrop',
-							},
+							{ Reward = 'Boon', BoonGod = 'Aphrodite' },
+							{ Reward = 'MetaCurrencyDrop' },
+							{ Reward = 'MaxManaDrop' },
 						}
 					},
 				},
 				{
 					{
 						Name = 'G_MiniBoss03',
-						Reward = 'Boon',
-						BoonGod = 'Poseidon',
-						Traits = {
+						Rewards = {
 							{
-								{ Name = 'Sprint', Rarity = 'Common' },
-								{ Name = 'ElementalRarityUpgrade' },
-								{ Name = 'DamageShareRetaliate', Rarity = 'Rare' },
+								Name = 'Boon',
+								BoonGod = 'Poseidon'
 							},
 							{
-								{ Name = 'Cast', Rarity = 'Rare' },
-								{ Name = 'Mana', Rarity = 'Rare' },
-								{ Name = 'ElementalRarityUpgrade'},
-							},
-						},
+								Name = 'Boon',
+								BoonGod = 'Hera',
+								Traits = {
+									{
+										{ Name = 'Sprint', Rarity = 'Common' },
+										{ Name = 'ElementalRarityUpgrade' },
+										{ Name = 'DamageShareRetaliate', Rarity = 'Rare' },
+									},
+									{
+										{ Name = 'Cast', Rarity = 'Rare' },
+										{ Name = 'Mana', Rarity = 'Rare' },
+										{ Name = 'ElementalRarityUpgrade'},
+									},
+								},
+							}
+						}
 					},
 					{
 						Name = 'G_MiniBoss03',
-						Reward = 'Boon',
-						BoonGod = 'Hestia',
+						Rewards = {
+							{ Name = 'Boon', BoonGod = 'Hestia' }
+						}
 					},
 				},
 				{
 					{
 						Name = 'G_Combat20',
-						Reward = 'MetaCardPointsCommonBigDrop',
 						Encounter = 'NemesisCombatG',
+						Rewards = {
+							{ Name = 'MetaCardPointsCommonBigDrop' }
+						}
 					},
 					{
 						Name = 'G_Combat20',
-						Reward = 'MetaCurrencyBigDrop',
 						Encounter = 'NemesisCombatG',
+						Rewards = {
+							{ Name = 'MetaCurrencyBigDrop' }
+						}
 					},
 				},
 				{
 					{
 						Name = 'G_Combat16',
-						Reward = 'MaxHealthDrop',
+						Rewards = {
+							{ Name = 'MaxHealthDrop' }
+						},
 					},
 					{
 						Name = 'G_Combat16',
-						Reward = 'Boon',
-						BoonGod = 'Poseidon',
+						Rewards = {
+							{ Name = 'Boon', BoonGod = 'Poseidon' }
+						},
 					},
 					{
 						Name = 'G_Combat16',
-						Reward = 'MaxManaDrop',
+						Rewards = {
+							{ Name = 'MaxManaDrop' }
+						},
 						Encounter = 'ArachneCombatG',
 						Cocoons = {
 							{Name = 'Small', SpawnOnIdKey = 1},
@@ -458,13 +509,20 @@ RunParameters = {
 				{
 					{
 						Name = 'G_Combat02',
-						Reward = 'Devotion',
-						LootAName = 'Hestia',
-						LootBName = 'Zeus'
+						Encounter = 'DevotionTestG',
+						Rewards = {
+							{
+								Name = 'Devotion',
+								GodA = 'Zeus',
+								GodB = 'Hestia'
+							}
+						},
 					},
 					{
 						Name = 'G_Combat02',
-						Reward = 'RoomMoneyDrop',
+						Rewards = {
+							{ Name = 'RoomMoneyDrop' }
+						},
 						IsFlipped = true,
 						SpawnWaves = {
 							{
@@ -484,12 +542,6 @@ RunParameters = {
 						IsFlipped = true,
 						ShopContent = {
 							{
-								Reward = 'HealDropMajor',
-							},
-							{
-								Reward = 'RandomPom',
-							},
-							{
 								Reward = 'RandomBoon',
 								BoonGod = 'Poseidon',
 								Traits = {
@@ -500,17 +552,25 @@ RunParameters = {
 									},
 								},
 							},
+							{
+								Reward = 'HealDropMajor',
+							},
+							{
+								Reward = 'RandomPom',
+							},
 						}
 					},
 					{
 						Name = 'G_PreBoss01',
-						Reward = 'Boon',
-						BoonGod = 'Hermes',
+						Rewards = {
+							{ Name = 'Boon', BoonGod = 'Hermes' }
+						},
 					},
 					{
 						Name = 'G_PreBoss01',
-						Reward = 'Boon',
-						BoonGod = 'Hestia',
+						Rewards = {
+							{ Name = 'Boon', BoonGod = 'Hestia' }
+						},
 					},
 				},
 				{
@@ -519,7 +579,7 @@ RunParameters = {
 						BossName = 'Scylla',
 						BossParameter = 'Scylla',
 					}
-				},
+				},]]
 				{
 					{
 						Name = 'G_PostBoss01',
@@ -548,7 +608,9 @@ RunParameters = {
 						Name = 'H_Combat13',
 						--, pom/hermes
 						--Encounter = 'Empty',
-						Reward = 'Pom',
+						Rewards = {
+							{ Name = 'Pom' }
+						},
 
 						--IsFlipped = true,
 						SpawnWaves = {
