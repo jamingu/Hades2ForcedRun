@@ -19,10 +19,11 @@ end)
 
 -- Choose the Room Rewards
 modutil.mod.Path.Wrap("ChooseRoomReward", function(base, run, room, rewardStoreName, previouslyChosenRewards, args)
-	local forcedRoomRewards = getForcedRoomRewards(run, room)
-
-	if args and forcedRoomRewards then
-		args.ForcedRewards = forcedRoomRewards
+	if args then
+		local forcedRewards = getForcedRoomRewards(run, room)
+		if forcedRewards then
+			args.ForcedRewards = forcedRewards
+		end
 	end
 
 	return base(run, room, rewardStoreName, previouslyChosenRewards, args)
@@ -84,6 +85,18 @@ modutil.mod.Path.Wrap("RunStateInit", function(base)
 
 	MyRunStateInit()
 end)
+
+-- This game function is only used for spawning Devotion reward
+modutil.mod.Path.Wrap("GetInteractedGodThisRun", function(base, ignoredGod)
+	local forcedDevotionGod = getForcedDevotionGod(ignoredGod)
+
+	if forcedDevotionGod then
+		return forcedDevotionGod
+	end
+
+	return base(ignoredGod)
+end)
+
 
 ----------------------------------------------
 ----------------------------------------------

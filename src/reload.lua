@@ -7,7 +7,9 @@
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
+-- Test global populated rooms
 -- Forced Devotion Gods
+
 
 -- @finish foolish run:
 -- handle Fields then the rest
@@ -16,7 +18,6 @@
 
 
 -- @later:
--- rewards as a list ? to allow rerolling door offers. Big impact on the current code
 -- only load once the runparameters in RoomData
 -- unrandomise gathering spots and location
 -- unrandomise location pot of gold
@@ -32,6 +33,7 @@
 -- Handle surface runs
 
 -- "Global" variables to handle the position in the run
+local GlobalIsPopulatedRooms
 local GlobalCurrentBiomeName
 local GlobalRoomDepth
 local GlobalRoomNumber
@@ -274,31 +276,40 @@ function generateForcedBoonRewardTraits(lootData)
 	local forcedTraits = nil
 
 	-- If a BoonTraits parameter exists (room or shop), force it
-	if currentRoomParameters and currentRoomParameters.Traits and currentRoomParameters.Traits[1] then
-		-- Standard Room reward
-		forcedTraits = table.remove(currentRoomParameters.Traits, 1) -- Pop the first offered traits list
-	elseif currentRoomParameters and currentRoomParameters.ShopContent then
-		-- Shop option
-		for k, shopElement in pairs(currentRoomParameters.ShopContent) do
-			-- Regular Boon
-			if shopElement.Reward == 'Boon' and shopElement.BoonGod == speakerName then
-				if currentRoomParameters.ShopContent[k].Traits and currentRoomParameters.ShopContent[k].Traits[1] then
-					forcedTraits = table.remove(currentRoomParameters.ShopContent[k].Traits, 1)
+	if currentRoomParameters then
+		if speakerName == 'Artemis' and currentRoomParameters.ArtemisTraits and currentRoomParameters.ArtemisTraits[1] then
+			-- Artemis
+			forcedTraits = table.remove(currentRoomParameters.ArtemisTraits, 1)
+		elseif currentRoomParameters.Rewards then
+			-- Room Boon reward
+			for k,reward in pairs(currentRoomParameters.Rewards) do
+				-- Return the traits of the first matching god in the list (or the first if no god is specified in the parameters to handle first room keepsakes)
+				-- @todo: better handle god keepsakes to be used any Biome in the run
+				if reward.Traits and (reward.BoonGod == speakerName or not reward.BoonGod) then
+					forcedTraits = table.remove(currentRoomParameters.Rewards[k].Traits, 1)
 					break
 				end
 			end
+		elseif currentRoomParameters.ShopContent then
+			-- Shop option
+			for k, shopElement in pairs(currentRoomParameters.ShopContent) do
+				-- Regular Boon
+				if shopElement.Reward == 'Boon' and shopElement.BoonGod == speakerName then
+					if currentRoomParameters.ShopContent[k].Traits and currentRoomParameters.ShopContent[k].Traits[1] then
+						forcedTraits = table.remove(currentRoomParameters.ShopContent[k].Traits, 1)
+						break
+					end
+				end
 
-			-- Random Boon
-			if shopElement.Reward == 'RandomBoon' and shopElement.BoonGod == speakerName then
-				if currentRoomParameters.ShopContent[k].Traits and currentRoomParameters.ShopContent[k].Traits[1] then
-					forcedTraits = table.remove(currentRoomParameters.ShopContent[k].Traits, 1)
-					break
+				-- Random Boon
+				if shopElement.Reward == 'RandomBoon' and shopElement.BoonGod == speakerName then
+					if currentRoomParameters.ShopContent[k].Traits and currentRoomParameters.ShopContent[k].Traits[1] then
+						forcedTraits = table.remove(currentRoomParameters.ShopContent[k].Traits, 1)
+						break
+					end
 				end
 			end
 		end
-	elseif currentRoomParameters and currentRoomParameters.ArtemisTraits and currentRoomParameters.ArtemisTraits[1] then
-		-- Artemis
-		forcedTraits = table.remove(currentRoomParameters.ArtemisTraits, 1)
 	end
 
 	if forcedTraits ~= nil then
@@ -469,17 +480,77 @@ function MyStartRoom(currentRun, room)
 end
 
 function getForcedRoomRewards(run, room)
-	return room.ForcedRewards
+	local roomParameters = _getParametersRoomFromName(room.Name)
+
+	-- Force the reward
+	local forcedRewards = nil
+	if roomParameters and roomParameters.Rewards then
+		-- Remove the room.ForcedReward key to allow rerolling doors
+		room.ForcedReward = nil
+
+		for _, reward in pairs(roomParameters.Rewards) do
+			if not reward.IsGenerated then
+				-- Ensure the reward is generated only once
+				reward.IsGenerated = true
+
+				if reward.Name == 'Boon' then
+					forcedRewards = {
+						{
+							Name = reward.Name,
+							LootName = reward.BoonGod .. 'Upgrade',
+						},
+					}
+				elseif reward.Name == 'Selene' then
+					forcedRewards = {
+						{
+							Name = 'SpellDrop',
+						},
+					}
+				elseif reward.Name == 'Hammer' then
+					forcedRewards = {
+						{
+							Name = 'WeaponUpgrade',
+						},
+					}
+				elseif reward.Name == 'Devotion' then
+					forcedRewards = {
+						{
+							Name = 'Devotion',
+						},
+					}
+				elseif reward.Name == 'Pom' then
+					forcedRewards = {
+						{
+							Name = 'StackUpgrade',
+						},
+					}
+				elseif reward.Name then
+					forcedRewards = {
+						{
+							Name = reward.Name,
+						},
+					}
+				end
+
+				break
+			end
+		end
+	end
+
+	return forcedRewards
 end
 
 function MyRunStateInit()
-	-- Load every Rooms from the RunParameters
-	for biomeName, biome in pairs(RunParameters.Biomes) do
-		for roomDepth, rooms in pairs(biome.Rooms) do
-			for roomNumber, room in pairs(rooms) do
-				_populateRoomData(biomeName, roomDepth, roomNumber)
+	-- Load every Rooms from the RunParameters, only once
+	if not GlobalIsPopulatedRooms then
+		for biomeName, biome in pairs(RunParameters.Biomes) do
+			for roomDepth, rooms in pairs(biome.Rooms) do
+				for roomNumber, room in pairs(rooms) do
+					_populateRoomData(biomeName, roomDepth, roomNumber)
+				end
 			end
 		end
+		GlobalIsPopulatedRooms = true
 	end
 
 	-- Force rooms Flip : also check the User not in the Hub (since the game stores CurrentRun as the last run)
@@ -488,6 +559,31 @@ function MyRunStateInit()
 	else
 		game.SetConfigOption({ Name = "FlipMapThings", Value = false })
 	end
+end
+
+function getForcedDevotionGod(ignoredGod)
+	local currentRoomName = game.CurrentRun.CurrentRoom.Name
+	local keys = _getParametersKeysFromName(currentRoomName)
+
+	-- Check for a Devotion Reward in each of the next depth Room
+	local cpt = 1
+	while game.RoomData[_getRoomName(keys.BiomeName, keys.RoomDepth+1, cpt)] do
+		local roomName = _getRoomName(keys.BiomeName, keys.RoomDepth+1, cpt)
+
+		local room = game.RoomData[roomName]
+		if room.IsDevotion and room.DevotionGodA and room.DevotionGodB then
+			-- If no ignored god is given, return the first god
+			if not ignoredGod then
+				return room.DevotionGodA .. 'Upgrade'
+			else
+				return room.DevotionGodB .. 'Upgrade'
+			end
+		end
+
+		cpt = cpt+1
+	end
+
+	return nil
 end
 
 function _getBiomeName(room)
@@ -574,47 +670,10 @@ function _populateRoomData(biomeName, roomDepth, roomNumber)
 		createdRoomData.WellShopSpawnChance = 0
 	end
 
-	-- Force the reward
-	if roomParameters.Reward == 'Boon' then
-		createdRoomData.ForcedRewards = {
-			{
-				Name = roomParameters.Reward,
-				LootName = roomParameters.BoonGod .. 'Upgrade',
-			},
-		}
-	elseif roomParameters.Reward == 'Selene' then
-		createdRoomData.ForcedRewards = {
-			{
-				Name = 'SpellDrop',
-			},
-		}
-	elseif roomParameters.Reward == 'Hammer' then
-		createdRoomData.ForcedRewards = {
-			{
-				Name = 'WeaponUpgrade',
-			},
-		}
-	elseif roomParameters.Reward == 'Devotion' then
-		createdRoomData.ForcedRewards = {
-			{
-				--@todo this does not work to force the gods
-				Name = 'Devotion',
-				LootAName = roomParameters.LootAName .. 'Upgrade',
-				LootBName = roomParameters.LootBName .. 'Upgrade',
-			},
-		}
-	elseif roomParameters.Reward == 'Pom' then
-		createdRoomData.ForcedRewards = {
-			{
-				Name = 'StackUpgrade',
-			},
-		}
-	elseif roomParameters.Reward then
-		createdRoomData.ForcedRewards = {
-			{
-				Name = roomParameters.Reward,
-			},
-		}
+	if roomParameters.Rewards and roomParameters.Rewards[1] and  roomParameters.Rewards[1].Name == 'Devotion' then
+		createdRoomData.IsDevotion = true
+		createdRoomData.DevotionGodA = roomParameters.Rewards[1].GodA
+		createdRoomData.DevotionGodB = roomParameters.Rewards[1].GodB
 	end
 
 	-- Specific case of Shop
@@ -1064,7 +1123,7 @@ function MyUnwrapRandomLoot(source)
 
 	-- @modified, force the god
 	local tmpArgs = { SpawnPoint = obstacleId }
-	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	local currentRoom = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 	if currentRoom and currentRoom.ShopContent then
 		for k, shopOption in pairs(currentRoom.ShopContent) do
 			if shopOption.Reward == 'RandomBoon' then
@@ -1113,7 +1172,7 @@ function MyApplyScyllaFightSpotlight(scylla, args)
 	end
 
 	--@modified Force the Spotlight Siren
-	local currentRoom = _getRunParametersForRoom(CurrentRun.CurrentRoom)
+	local currentRoom = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 	if currentRoom and currentRoom.BossParameter then
 		flagData = args.Flags[currentRoom.BossParameter]
 	end
