@@ -14,7 +14,7 @@ RunParameters = {
 							{
 								-- No forced God to allow other aspects to run with their preferred setup
 								--Name = 'Boon',
-								--BoonGod = 'Zeus',
+								BoonGod = 'Any',
 								Traits = {
 									{
 										{ Name = 'Special', Rarity = 'Epic' },
@@ -334,7 +334,7 @@ RunParameters = {
 						}
 					},
 					{
-						Name = 'F_PreBoss01',						
+						Name = 'F_PreBoss01',
 						Rewards = {
 							{ Name = 'Boon', BoonGod = 'Hermes' }
 						},
@@ -377,7 +377,7 @@ RunParameters = {
         ---------------------
 		G = {
             Rooms = {
-                --[[{
+                {
 					{
 						Name = 'G_Intro',
 						Encounter = 'Empty',
@@ -579,7 +579,7 @@ RunParameters = {
 						BossName = 'Scylla',
 						BossParameter = 'Scylla',
 					}
-				},]]
+				},
 				{
 					{
 						Name = 'G_PostBoss01',
@@ -601,19 +601,68 @@ RunParameters = {
 					{
 						Name = 'H_Intro',
 						Encounter = 'Empty',
+						StartPoint = '723141'
 					}
 				},
 				{
 					{
 						Name = 'H_Combat13',
-						--, pom/hermes
-						--Encounter = 'Empty',
 						Rewards = {
-							{ Name = 'Pom' }
+							{ 
+								Name = 'Pom',
+								LocationId = '621502',
+							},
+							{
+								Name = 'Boon',
+								BoonGod = 'Hermes',
+								LocationId = '715356',
+								Traits = {
+									--The first traits are in dublon because they are rolled twice because the pom is taken first
+									--and rewards are rerolled in the fields if they are not taken first (via CreateBoonLootButtons, one of the check is false and call SetTraitsOnLoot)
+									{
+										{ Name = 'HermesSpecial', Rarity = 'Common' },
+										{ Name = 'SorcerySpeed', Rarity = 'Epic' },
+										{ Name = 'SlowProjectile', Rarity = 'Common' },
+									},
+									{
+										{ Name = 'HermesSpecial', Rarity = 'Common' },
+										{ Name = 'SorcerySpeed', Rarity = 'Epic' },
+										{ Name = 'SlowProjectile', Rarity = 'Common' },
+									},
+									{
+										{ Name = 'HermesWeapon', Rarity = 'Common' },
+										{ Name = 'MoneyMultiplier', Rarity = 'Epic' },
+										{ Name = 'TimedKillBuff', Rarity = 'Common' },
+									},
+								},
+							}
 						},
-
-						--IsFlipped = true,
-						SpawnWaves = {
+						FieldsBonusRewards = {
+							{ Name = 'MaxManaDropSmall', LocationId = '572849', },
+							{ Name = 'RoomMoneyTinyDrop', LocationId = '736822', },
+						},
+						FieldsRewardsCount = 2,
+						Encounters = {
+							{
+								
+							},
+							{
+								ForceFigSkipEncounterNumber = 1,
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Mage_Elite', Count = 5 },
+											{ Name = 'Radiator',   Count = 1 },
+											{ Name = 'Screamer',   Count = 5 },
+										}
+									}
+								}
+							},
+							{
+								
+							}
+						},
+						--[[SpawnWaves = {
 							{
 								Spawns = {
 									{ Name = 'Mage_Elite', Count = 5 },
@@ -621,10 +670,32 @@ RunParameters = {
 									{ Name = 'Screamer',   Count = 5 },
 								}
 							}
-						},
+						},]]
 
 					}
-				}
+				},
+				{
+					{
+						Name = 'H_MiniBoss02',
+						Rewards = {
+							{
+								Name = 'Boon',
+								BoonGod = 'Poseidon',
+								Traits = {
+									--@todo
+								},
+							},
+						},
+					},
+					{
+						Name = 'H_Combat14',
+						Rewards = {
+							{ Name = 'RoomMoneyDrop' },
+							{ Name = 'MaxHealthDrop' },
+						},
+						FieldsRewardsCount = 2,
+					},
+				},
 			}
 		},
 		Chaos = {
