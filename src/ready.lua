@@ -19,11 +19,23 @@ end)
 
 -- Choose the Room Rewards
 modutil.mod.Path.Wrap("ChooseRoomReward", function(base, run, room, rewardStoreName, previouslyChosenRewards, args)
-	if args then
-		local forcedRewards = getForcedRoomRewards(run, room)
-		if forcedRewards then
+	-- Room generation in Fields is specific. It calls this method once for the door with the args "Door", then again for each "cage" rewards without the arg
+	-- The first call should not generate the actual reward to account for this
+	local setRewardIsGenerated = true
+	if args and args.Door then
+		setRewardIsGenerated = false
+	end
+
+	local forcedRewards = getForcedRoomRewards(run, room, setRewardIsGenerated)
+	if forcedRewards then
+		if args then
 			args.ForcedRewards = forcedRewards
 		end
+		room.Reward = forcedRewards[1].Name
+		room.ForceLootName = forcedRewards[1].LootName
+		room.RewardOverrides = nil
+
+		return forcedRewards[1].Name
 	end
 
 	return base(run, room, rewardStoreName, previouslyChosenRewards, args)
@@ -70,7 +82,7 @@ modutil.mod.Path.Wrap("StartRoom", function(base, ...)
 	return base(...)
 end)
 
-
+-- Force loading map binaries based on their original name
 modutil.mod.Path.Wrap("LoadMap", function(base, argTable)
 	local baseRoomName = _getRoomBaseName(argTable.Name)
 	if baseRoomName then
@@ -80,13 +92,14 @@ modutil.mod.Path.Wrap("LoadMap", function(base, argTable)
 	return base(argTable)
 end)
 
+-- Populate the rooms
 modutil.mod.Path.Wrap("RunStateInit", function(base)
 	base()
 
 	MyRunStateInit()
 end)
 
--- This game function is only used for spawning Devotion reward
+-- Devotion rewards handling. (This game function is only used for spawning Devotion reward)
 modutil.mod.Path.Wrap("GetInteractedGodThisRun", function(base, ignoredGod)
 	local forcedDevotionGod = getForcedDevotionGod(ignoredGod)
 
@@ -97,10 +110,33 @@ modutil.mod.Path.Wrap("GetInteractedGodThisRun", function(base, ignoredGod)
 	return base(ignoredGod)
 end)
 
+-- Fields multiple rewards door 
+modutil.mod.Path.Wrap("SelectFieldsDoorCageCount", function(base, run, room)
+	local forcedFieldsRewardCount = getForcedFieldsRewardCount(room)
 
-----------------------------------------------
-----------------------------------------------
--------------------------------------------------
+	if forcedFieldsRewardCount then
+		return forcedFieldsRewardCount
+	end
+
+	return base(run, room)
+end)
+
+--
+modutil.mod.Path.Wrap("HandleEnemySpawns", function(base, encounter)
+	MyHandleEnemySpawns(encounter)
+
+	return base(encounter)
+end)
+
+-- Cage rewards (Fields) spawn location
+modutil.mod.Path.Wrap("SpawnRewardCages", function(base, room, args)
+	MySpawnRewardCages(room, args)
+end)
+
+
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
 
 -- Force spawn positions
 modutil.mod.Path.Wrap("SelectSpawnPoint", function(base, ...)
