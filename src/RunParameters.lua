@@ -642,36 +642,34 @@ RunParameters = {
 							{ Name = 'RoomMoneyTinyDrop', LocationId = '736822', },
 						},
 						FieldsRewardsCount = 2,
+						ForceFigSkipEncounterNumber = 2,
 						Encounters = {
 							{
-								
+								-- @todo room 
 							},
 							{
-								ForceFigSkipEncounterNumber = 1,
 								SpawnWaves = {
 									{
 										Spawns = {
-											{ Name = 'Mage_Elite', Count = 5 },
-											{ Name = 'Radiator',   Count = 1 },
-											{ Name = 'Screamer',   Count = 5 },
-										}
+											{ Name = 'Lovesick', Count = 3 },
+											{ Name = 'BrokenHearted',   Count = 6 },
+										},
+										SpawnOrder = {'Lovesick', 'Lovesick', 'BrokenHearted', 'Lovesick', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted'}
 									}
 								}
 							},
 							{
-								
-							}
-						},
-						--[[SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Mage_Elite', Count = 5 },
-									{ Name = 'Radiator',   Count = 1 },
-									{ Name = 'Screamer',   Count = 5 },
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Lovesick', Count = 3 },
+											{ Name = 'BrokenHearted',   Count = 6 },
+										},
+										SpawnOrder = {'Lovesick', 'Lovesick', 'BrokenHearted', 'Lovesick', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted'}
+									}
 								}
-							}
-						},]]
-
+							},
+						},
 					}
 				},
 				{
@@ -681,9 +679,9 @@ RunParameters = {
 							{
 								Name = 'Boon',
 								BoonGod = 'Poseidon',
-								Traits = {
-									--@todo
-								},
+								--Traits = {
+								--	--@todo
+								--},
 							},
 						},
 					},
