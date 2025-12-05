@@ -7,17 +7,14 @@
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
--- Test global populated rooms
--- Forced Devotion Gods
-
-
 -- @finish foolish run:
 -- handle Fields then the rest
 -- Handle Tartarus
-
+-- when redoing a compelte run, check that the ending postboss room actually stop the timer
 
 
 -- @later:
+-- Put Artemis/Athena traits in a more global scope since they can happen in multiple biome/room
 -- Improve fields reward/encounter pairing, as currently they are not directly linked to each other
 -- only load once the runparameters in RoomData
 -- unrandomise gathering spots and location
@@ -186,11 +183,6 @@ function generateForcedShopOptions(args)
 end
 
 function generateForcedEncounterData(currentRun, room, args)
-	-- Auto generated encounter (GeneratedX) except for Fields(H) Biome
-	if room.IsCombat and not room.ForcedEncounterName and room.RoomSetName ~= 'H' then
-		room.ForcedEncounterName = 'Generated' .. room.RoomSetName
-	end
-
 	local encounterName
 	if room.ForcedEncounterName then
 		encounterName = room.ForcedEncounterName
@@ -198,8 +190,21 @@ function generateForcedEncounterData(currentRun, room, args)
 		encounterName = room.Encounter.Name
 	end
 
-	rom.log.warning('encounterName')
-	rom.log.warning(encounterName)
+	-- Auto generate default encounters based on the room
+	if room.IsCombat and not room.ForcedEncounterName then
+		-- Specific case for Fields. The room itself does not contain any room.Encounter (only the cage rewards)
+		-- so we affect the encounter based on the room (as they are the same)
+		-- @todo improve this as this quite clunky
+		if room.RoomSetName == 'H' then
+			if room.Encounter and string.find(room.Encounter.Name, 'GeneratedH_Passive') then
+				encounterName = 'Generated' .. room.RoomSetName
+			elseif room.LegalEncounters[1] then
+				encounterName = room.LegalEncounters[1] -- GeneratedH_Passive(Small)
+			end
+		else
+			encounterName = 'Generated' .. room.RoomSetName
+		end
+	end
 
 	if room.ForcedEncounters then
 		local createdEncounterData
@@ -221,7 +226,6 @@ function generateForcedEncounterData(currentRun, room, args)
 						waveCount = waveCount + 1
 
 						for spawnValueKey, spawnValue in pairs(spawnWaveValues.Spawns) do
-							rom.log.warning(spawnValue.Name)
 							createdSpawnWaves[spawnWaveKey].Spawns[spawnValueKey] = {
 								Name = spawnValue.Name,
 								CountMin = spawnValue.Count,
@@ -235,7 +239,10 @@ function generateForcedEncounterData(currentRun, room, args)
 					createdEncounterData.SpawnWaves = createdSpawnWaves
 					createdEncounterData.MinWaves = waveCount
 					createdEncounterData.MaxWaves = waveCount
-					createdEncounterData.SpawnIntervalMax = createdEncounterData.SpawnIntervalMin
+
+					local averageSpawnInterval = (createdEncounterData.SpawnIntervalMax + createdEncounterData.SpawnIntervalMin)/2
+					createdEncounterData.SpawnIntervalMin = averageSpawnInterval
+					createdEncounterData.SpawnIntervalMax = averageSpawnInterval
 				end
 				
 				break
@@ -264,7 +271,7 @@ end
 function generateForcedRewardTraits(lootData, args)
 	local upgradeOptions = nil
 
-	if lootData.GodLoot or (lootData.SpeakerName and lootData.SpeakerName == 'Hermes') then
+	if lootData.GodLoot or (lootData.SpeakerName and lootData.SpeakerName == 'Hermes') or (lootData.SpeakerName and lootData.SpeakerName == 'Athena') then
 		upgradeOptions = generateForcedBoonRewardTraits(lootData)
 	elseif lootData.Name == 'WeaponUpgrade' then
 		upgradeOptions = generateForcedHammerRewardTraits()
@@ -294,6 +301,9 @@ function generateForcedBoonRewardTraits(lootData)
 		if speakerName == 'Artemis' and currentRoomParameters.ArtemisTraits and currentRoomParameters.ArtemisTraits[1] then
 			-- Artemis
 			forcedTraits = table.remove(currentRoomParameters.ArtemisTraits, 1)
+		elseif speakerName == 'Athena' and currentRoomParameters.AthenaTraits and currentRoomParameters.AthenaTraits[1] then
+			-- Athena
+			forcedTraits = table.remove(currentRoomParameters.AthenaTraits, 1)
 		elseif currentRoomParameters.Rewards then
 			-- Room Boon reward
 			for k,reward in pairs(currentRoomParameters.Rewards) do
@@ -445,17 +455,20 @@ function generateForcedChaosTraits()
 	end
 end
 
+local test = false
 function MyHandleEnemySpawns(encounter)
 	-- Forced Dyonisus keepsake encounter skip
-	rom.log.warning('test fig skip')
-	rom.log.warning(encounter.Name)
 	if encounter.CanEncounterSkip then
+		-- Set the skip chance to 0 by default, but if the fig is forced for the encounter number
+		local sourceTrait = game.HasHeroTraitValue("SkipEncounterChance")
+		sourceTrait.SkipEncounterChance = 0
+
 		local roomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
-		rom.log.warning(roomParameters.ForceFigSkipEncounterNumber)
-		rom.log.warning(GlobalRoomEncounterDepth)
-		if roomParameters and roomParameters.ForceFigSkipEncounterNumber == GlobalRoomEncounterDepth then
-			rom.log.warning('force fig skip')
-			encounter.SpawnsSkipped = true
+		if roomParameters then
+			if roomParameters.ForceFigSkipEncounterNumber == GlobalRoomEncounterDepth then
+				rom.log.warning('forced fig')
+				sourceTrait.SkipEncounterChance = 1
+			end
 		end
 	end
 
@@ -858,7 +871,6 @@ function MyGetNextSpawn(encounter)
 		end
 
 		if randomSpawnInfo == nil then
-			rom.log.warning('randomSpawnInfo == nil') -- should not happen, debug
 			randomSpawnInfo = remainingPrioritySpawnInfo[1] or remainingPriorityGroupSpawnInfo[1] or
 			remainingSpawnInfo[1]
 		end
@@ -883,7 +895,6 @@ function MyGetNextSpawn(encounter)
 end
 
 function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
-	--rom.log.warning('MySelectSpawnPoint')
 	args = args or {}
 	enemy = enemy or {}
 	encounter = encounter or {}
@@ -928,21 +939,17 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 		shuffledSpawnPointIds = encounter.NearbySpawnPoints or MapState.SpawnPoints
 		table.sort(shuffledSpawnPointIds)
 	end
-
 	-- Handle forced spawn position
 	local spawnOnIdKeys = nil
-	if encounter.Spawns and encounter.Spawns[enemy.Name] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'] then
-		-- Combat forced position
-		spawnOnIdKeys = encounter.Spawns[enemy.Name]['SpawnOnIdKeys']
-		rom.log.warning('1')
+	if encounter.Spawns and encounter.Spawns[enemy.Name] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'][1] then
+		-- Pop the first value
+		spawnOnIdKeys = { table.remove(encounter.Spawns[enemy.Name]['SpawnOnIdKeys'],1) }
 	elseif enemy.SpawnOnIdKey then
 		-- ArachneCombat forced position
 		spawnOnIdKeys = { enemy.SpawnOnIdKey }
-		rom.log.warning('2')
 	end
 
 	if spawnOnIdKeys then
-		rom.log.warning('3')
 		local newSpawnPointIds = {}
 		-- Force the manual spawned point first
 		for k, spawnOnIdKey in pairs(spawnOnIdKeys) do
@@ -963,6 +970,7 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 			if args.CycleSpawnPoints then
 				RemoveValueAndCollapse(MapState.CyclingSpawnPoints, id)
 			end
+
 			return id
 		end
 	end

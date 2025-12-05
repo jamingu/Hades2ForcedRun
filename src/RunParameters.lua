@@ -643,32 +643,39 @@ RunParameters = {
 						},
 						FieldsRewardsCount = 2,
 						ForceFigSkipEncounterNumber = 2,
+						AthenaTraits = {
+							{
+								{ Name = 'ManaSpear', Rarity = 'Epic' },
+								{ Name = 'InvulnerabilityCast', Rarity = 'Epic' },
+								{ Name = 'DeathDefianceRefill', Rarity = 'Epic' },
+							},
+						},
 						Encounters = {
 							{
-								-- @todo room 
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'CorruptedShadeSmall', Count = 1 },
+											{ Name = 'CorruptedShadeMedium', Count = 3 },
+										},
+									}
+								}
+							},
+							{
+								-- fig skipped
 							},
 							{
 								SpawnWaves = {
 									{
 										Spawns = {
-											{ Name = 'Lovesick', Count = 3 },
-											{ Name = 'BrokenHearted',   Count = 6 },
+											{ Name = 'Lovesick', Count = 3, SpawnOnIdKeys = {42,2,37} },
+											{ Name = 'BrokenHearted', Count = 9, SpawnOnIdKeys = {13,30,28,29,38,60} },
 										},
-										SpawnOrder = {'Lovesick', 'Lovesick', 'BrokenHearted', 'Lovesick', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted'}
+										SpawnOrder = {'Lovesick', 'BrokenHearted', 'Lovesick', 'Lovesick', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted'}
 									}
 								}
 							},
-							{
-								SpawnWaves = {
-									{
-										Spawns = {
-											{ Name = 'Lovesick', Count = 3 },
-											{ Name = 'BrokenHearted',   Count = 6 },
-										},
-										SpawnOrder = {'Lovesick', 'Lovesick', 'BrokenHearted', 'Lovesick', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted'}
-									}
-								}
-							},
+							
 						},
 					}
 				},
