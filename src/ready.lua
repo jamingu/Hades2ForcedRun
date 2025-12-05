@@ -53,6 +53,13 @@ modutil.mod.Path.Wrap("ChooseEncounter", function(base, currentRun, room, args)
 	end
 end)
 
+--
+modutil.mod.Path.Wrap("HandleEnemySpawns", function(base, encounter)
+	MyHandleEnemySpawns(encounter)
+
+	return base(encounter)
+end)
+
 -- Force the traits offered in the boon list
 modutil.mod.Path.Wrap("SetTraitsOnLoot", function(base, lootData, args)
 	local isForced = generateForcedRewardTraits(lootData, args)
@@ -119,13 +126,6 @@ modutil.mod.Path.Wrap("SelectFieldsDoorCageCount", function(base, run, room)
 	end
 
 	return base(run, room)
-end)
-
---
-modutil.mod.Path.Wrap("HandleEnemySpawns", function(base, encounter)
-	MyHandleEnemySpawns(encounter)
-
-	return base(encounter)
 end)
 
 -- Cage rewards (Fields) spawn location
