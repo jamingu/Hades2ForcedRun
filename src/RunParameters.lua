@@ -24,11 +24,16 @@ RunParameters = {
 								},
 							}
 						},
-						SpawnWaves = {
+						Encounters = {
 							{
-								Spawns = {
-									{ Name = 'Mage', Count = 1, SpawnOnIdKeys = {1} },
-									{ Name = 'Brawler', Count = 2, SpawnOnIdKeys = {2,9} },
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Mage', Count = 1, SpawnOnIdKeys = {1} },
+											{ Name = 'Brawler', Count = 2, SpawnOnIdKeys = {8,4} },
+										},
+										SpawnOrder = {'Mage', 'Brawler', 'Brawler'}
+									}
 								}
 							}
 						}
@@ -40,13 +45,18 @@ RunParameters = {
 						Rewards = {
 							{ Name = 'MetaCardPointsCommonDrop' }
 						},
-						SpawnWaves = {
+						Encounters = {
 							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 2, SpawnOnIdKeys = {11,5} },
-									{ Name = 'Mage', Count = 3, SpawnOnIdKeys = {1,4,7} },
-								},
-								SpawnOrder = {'Mage', 'Mage', 'Mage', 'Brawler', 'Brawler'}
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Mage', Count = 3, SpawnOnIdKeys = {1,5,7} },
+											{ Name = 'Brawler', Count = 2, SpawnOnIdKeys = {17, 15} },
+											
+										},
+										SpawnOrder = {'Mage', 'Mage', 'Mage', 'Brawler', 'Brawler'}
+									}
+								}
 							}
 						}
 					}
@@ -72,25 +82,38 @@ RunParameters = {
 								},
 							}
 						},
-						SpawnWaves = {
+						Encounters = {
 							{
-								Spawns = {
-									{ Name = 'Radiator', Count = 7 },
-								},
-							},
-							{
-								Spawns = {
-									{ Name = 'Mage',     Count = 2 },
-									{ Name = 'Radiator', Count = 3 },
-								},
-								SpawnOrder = {'Mage', 'Mage', 'Radiator', 'Radiator', 'Radiator' }
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Radiator', Count = 7 },
+										},
+									},
+									{
+										Spawns = {
+											{ Name = 'Mage',     Count = 2 },
+											{ Name = 'Radiator', Count = 3 },
+										},
+										SpawnOrder = {'Mage', 'Mage', 'Radiator', 'Radiator', 'Radiator' }
+									}
+								}
 							}
 						}
 					},
 					{
 						Name = 'F_Combat10',
 						Rewards = {
-							{ Name = 'Pom' }
+							{
+								Name = 'Pom',
+								Traits = {
+									{
+										{ Name = 'HeraWeaponBoon' },
+										{ Name = 'HeraSpecialBoon' },
+										{ Name = 'AloneDamageBoon' },
+									},
+								}
+							}
 						},
 					},
 				},
@@ -101,16 +124,20 @@ RunParameters = {
 							{ Name = 'RoomMoneyDrop' }
 						},
 						GoldPots = {Count = 2},
-						SpawnWaves = {
+						Encounters = {
 							{
-								Spawns = {
-									{ Name = 'Mage', Count = 5 },
-								}
-							},
-							{
-								Spawns = {
-									{ Name = 'Mage',     Count = 2, SpawnOnIdKeys = {1,2} },
-									{ Name = 'Radiator', Count = 3, SpawnOnIdKeys = {3,4,5} },
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Mage', Count = 5 },
+										}
+									},
+									{
+										Spawns = {
+											{ Name = 'Mage',     Count = 2, SpawnOnIdKeys = {1,2} },
+											{ Name = 'Radiator', Count = 3, SpawnOnIdKeys = {3,4,5} },
+										}
+									}
 								}
 							}
 						}
@@ -154,6 +181,7 @@ RunParameters = {
 					{
 						Name = 'F_MiniBoss03',
 						IsFlipped = true,
+						GoldPots = {Count = 1},
 						Rewards = {
 							{
 								Name = 'Boon',
@@ -172,7 +200,6 @@ RunParameters = {
 								},
 							}
 						},
-						GoldPots = {Count = 1}
 					},
 					{
 						Name = 'F_MiniBoss03',
@@ -202,34 +229,38 @@ RunParameters = {
 								{ Name = 'TimedCritVulnerability', Rarity = 'Common' },
 							},
 						},
-						SpawnWaves = {
+						Encounters = {
 							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 4 },
-								},
-								SpawnOrder = {'Brawler', 'Brawler', 'Brawler', 'Brawler'}
-							},
-							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 1 },
-									{ Name = 'Mage_Elite',  Count = 1 },
-								},
-								SpawnOrder = {'Brawler', 'Mage_Elite'}
-							},
-							{
-								Spawns = {
-									{ Name = 'Brawler',  Count = 1 },
-									{ Name = 'SiegeVine',  Count = 2 },
-								},
-								SpawnOrder = {'Brawler', 'SiegeVine', 'SiegeVine'}
-							},
-							{
-								Spawns = {
-									{ Name = 'Mage_Elite',  Count = 3 },
-									{ Name = 'Brawler',  Count = 3 },
-								},
-								SpawnOrder = {'Brawler', 'Mage_Elite',  'Mage_Elite', 'Brawler', 'Mage_Elite', 'Brawler'}
-							},
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Brawler',  Count = 4, SpawnOnIdKeys = {10,11,12,13,14} },
+										},
+										SpawnOrder = {'Brawler', 'Brawler', 'Brawler', 'Brawler'}
+									},
+									{
+										Spawns = {
+											{ Name = 'Brawler',  Count = 1, SpawnOnIdKeys = {11} },
+											{ Name = 'Mage_Elite',  Count = 1, SpawnOnIdKeys = {12,13} },
+										},
+										SpawnOrder = {'Brawler', 'Mage_Elite'}
+									},
+									{
+										Spawns = {
+											{ Name = 'Brawler',  Count = 1, SpawnOnIdKeys = {12} },
+											{ Name = 'SiegeVine',  Count = 2, SpawnOnIdKeys = {10,11} },
+										},
+										SpawnOrder = {'Brawler', 'SiegeVine', 'SiegeVine'}
+									},
+									{
+										Spawns = {
+											{ Name = 'Mage_Elite',  Count = 3, SpawnOnIdKeys = {10,11,12 } },
+											{ Name = 'Brawler',  Count = 3, SpawnOnIdKeys = {13,14,15} },
+										},
+										SpawnOrder = {'Brawler', 'Mage_Elite',  'Mage_Elite', 'Brawler', 'Mage_Elite', 'Brawler'}
+									}
+								}
+							}
 						}
 					}
 				},
@@ -293,17 +324,22 @@ RunParameters = {
 							{ Name = 'RoomMoneyDrop' }
 						},
 						IsFlipped = true,
-						SpawnWaves = {
-							{
-								Spawns = {
-									{ Name = 'Mage_Elite', Count = 5 },
-									{ Name = 'Radiator',   Count = 1 },
-									{ Name = 'Screamer',   Count = 5 },
-								}
-							}
-						},
 						IsForcedWell = true,
 						WellSpawnOnIdKey = 1,
+						Encounters = {
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Mage_Elite', Count = 5 },
+											{ Name = 'Radiator',   Count = 1 },
+											{ Name = 'Screamer',   Count = 5 },
+										},
+										SpawnOrder = {'Mage_Elite', 'Mage_Elite',  'Mage_Elite', 'Mage_Elite', 'Mage_Elite', 'Radiator', 'Screamer','Screamer','Screamer','Screamer','Screamer'}
+									}
+								},
+							}
+						}
 					},
 					{
 						Name = 'F_Combat14',
@@ -398,10 +434,14 @@ RunParameters = {
 						Rewards = {
 							{ Name = 'MetaCurrencyDrop' }
 						},
-						SpawnWaves = {
+						Encounters = {
 							{
-								Spawns = {
-									{ Name = 'FishmanMelee', Count = 6, SpawnOnIdKeys = {1,2,3,4,5,6} },
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'FishmanMelee', Count = 6, SpawnOnIdKeys = {1,2,3,4,5,6} },
+										}
+									}
 								}
 							}
 						}
@@ -495,12 +535,12 @@ RunParameters = {
 						},
 						Encounter = 'ArachneCombatG',
 						Cocoons = {
-							{Name = 'Small', SpawnOnIdKey = 1},
-							{Name = 'Small', SpawnOnIdKey = 2},
-							{Name = 'Small', SpawnOnIdKey = 3},
-							{Name = 'Small', SpawnOnIdKey = 4},
-							{Name = 'Small', SpawnOnIdKey = 5},
-							{Name = 'Medium', SpawnOnIdKey = 6},
+							{Name = 'Small', SpawnOnIdKey = 24},-- 24 small ok
+							{Name = 'Small', SpawnOnIdKey = 30}, -- 30 ok
+							{Name = 'Small', SpawnOnIdKey = 50}, -- this one contains
+							{Name = 'Small', SpawnOnIdKey = 39}, -- 39 ok
+							{Name = 'Medium', SpawnOnIdKey = 38}, -- 38 ok
+							{Name = 'Large', SpawnOnIdKey = 10},
 						},
 						IsForcedWell = true,
 						WellSpawnOnIdKey = 1
@@ -524,11 +564,15 @@ RunParameters = {
 							{ Name = 'RoomMoneyDrop' }
 						},
 						IsFlipped = true,
-						SpawnWaves = {
+						Encounters = {
 							{
-								Spawns = {
-									{ Name = 'FishSwarmerSquad_Elite', Count = 6, SpawnOnIdKeys = {1,2,3} },
-									{ Name = 'Turtle_Elite', Count = 3, SpawnOnIdKeys = {5,6,7} },
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'FishSwarmerSquad_Elite', Count = 6, SpawnOnIdKeys = {13,14,15,16,17,18} }, 
+											{ Name = 'Turtle_Elite', Count = 3, SpawnOnIdKeys = {5,6,7} },
+										}
+									}
 								}
 							}
 						}
@@ -597,7 +641,7 @@ RunParameters = {
 		},
 		H = {
 			Rooms = {
-				{
+				--[[{
 					{
 						Name = 'H_Intro',
 						Encounter = 'Empty',
@@ -608,7 +652,10 @@ RunParameters = {
 					{
 						Name = 'H_Combat13',
 						Rewards = {
-							{ 
+							{
+								-- empty reward for the global room
+							},
+							{
 								Name = 'Pom',
 								LocationId = '621502',
 							},
@@ -669,7 +716,7 @@ RunParameters = {
 									{
 										Spawns = {
 											{ Name = 'Lovesick', Count = 3, SpawnOnIdKeys = {42,2,37} },
-											{ Name = 'BrokenHearted', Count = 9, SpawnOnIdKeys = {13,30,28,29,38,60} },
+											{ Name = 'BrokenHearted', Count = 7, SpawnOnIdKeys = {35,23,24,36,38,35,32} },
 										},
 										SpawnOrder = {'Lovesick', 'BrokenHearted', 'Lovesick', 'Lovesick', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted'}
 									}
@@ -678,7 +725,7 @@ RunParameters = {
 							
 						},
 					}
-				},
+				},--]]
 				{
 					{
 						Name = 'H_MiniBoss02',
@@ -686,21 +733,55 @@ RunParameters = {
 							{
 								Name = 'Boon',
 								BoonGod = 'Poseidon',
-								--Traits = {
-								--	--@todo
-								--},
+								Traits = {
+									{
+										{ Name = 'Sprint', Rarity = 'Rare' },
+										{ Name = 'FocusDamageShave', Rarity = 'Epic' },
+										{ Name = 'MoneyDamage', Rarity = 'Duo' },
+									},
+								},
 							},
 						},
 					},
-					{
+					--[[{
 						Name = 'H_Combat14',
 						Rewards = {
 							{ Name = 'RoomMoneyDrop' },
 							{ Name = 'MaxHealthDrop' },
 						},
 						FieldsRewardsCount = 2,
-					},
+					}]]
 				},
+				{
+					{
+						Name = 'H_Bridge01',
+						Traits = { 'DiminishingHealthAndManaBoon', 'EchoDoubleLevelBoon', 'EchoLastReward'},
+						Rewards = {
+							{
+								Name = 'Boon',
+								BoonGod = 'Any',
+								Traits = {
+									-- Need to double the rewards for Echo (generated twice)
+									{
+										{ Name = 'Sprint', Rarity = 'Epic' },
+										{ Name = 'OmegaPoseidonProjectile', Rarity = 'Common' },
+										{ Name = 'FocusDamageShave', Rarity = 'Epic' },
+									},
+									{
+										{ Name = 'Sprint', Rarity = 'Epic' },
+										{ Name = 'OmegaPoseidonProjectile', Rarity = 'Common' },
+										{ Name = 'FocusDamageShave', Rarity = 'Epic' },
+									},
+								},
+							},
+						},
+					},
+					-- There's need to be a room here or the game bugs, even though it should not be generated ...
+					{
+						Name = 'H_Combat14',
+						FieldsRewardsCount = 2,
+					}
+				}
 			}
 		},
 		Chaos = {

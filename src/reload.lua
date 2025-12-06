@@ -206,6 +206,7 @@ function generateForcedEncounterData(currentRun, room, args)
 		end
 	end
 
+	-- If there is forced encounters, generate the encounter with specific spawns and waves
 	if room.ForcedEncounters then
 		local createdEncounterData
 
@@ -250,6 +251,11 @@ function generateForcedEncounterData(currentRun, room, args)
 		end
 
 		return createdEncounterData
+	elseif encounterName then
+		-- A specific encounter name is set, but no ForcedEncounter, return a copy of the room enconter
+		local createdEncounterData
+		createdEncounterData = game.DeepCopyTable(game.EncounterData[encounterName])
+		return createdEncounterData
 	end
 
 	if room.IsShop then
@@ -279,6 +285,8 @@ function generateForcedRewardTraits(lootData, args)
 		upgradeOptions = generateForcedBoonRewardTraits(lootData)
 	elseif lootData.Name == 'TrialUpgrade' then
 		upgradeOptions = generateForcedChaosTraits()
+	elseif lootData.Name == 'StackUpgrade' then
+		upgradeOptions = generateForcedStackUpgradeRewardTraits(lootData)
 	end
 
 	if upgradeOptions then
@@ -286,6 +294,33 @@ function generateForcedRewardTraits(lootData, args)
 		return true
 	else
 		return false
+	end
+end
+
+function generateForcedStackUpgradeRewardTraits(lootData)
+	-- @todo: improve this: handle non existing boons like no attack, only propose boons the User has, etc.
+	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+
+	local forcedTraits = nil
+	if currentRoomParameters and currentRoomParameters.Rewards then
+		for k,reward in pairs(currentRoomParameters.Rewards) do
+			if reward.Traits then
+				forcedTraits = table.remove(currentRoomParameters.Rewards[k].Traits, 1)
+				break
+			end
+		end
+	end
+
+	if forcedTraits ~= nil then
+		local upgradeOptions = {}
+		for _, trait in pairs(forcedTraits) do			
+			table.insert(upgradeOptions, {
+				Type = 'Trait',
+				ItemName = trait.Name,
+			})
+		end
+
+		return upgradeOptions
 	end
 end
 
@@ -307,9 +342,11 @@ function generateForcedBoonRewardTraits(lootData)
 		elseif currentRoomParameters.Rewards then
 			-- Room Boon reward
 			for k,reward in pairs(currentRoomParameters.Rewards) do
-				-- Return the traits of the first matching god in the list (or the first if no god is specified in the parameters to handle first room keepsakes)
+				rom.log.warning('k,reward in pairs')
+				-- Return the traits of the first matching god in the list (or the first if "Any" is specified in the parameters to handle first room keepsakes AND Echo)
 				-- @todo: better handle god keepsakes to be used any Biome in the run
 				if reward.Traits and (reward.BoonGod == speakerName or reward.BoonGod == 'Any') then
+					rom.log.warning('ok')
 					forcedTraits = table.remove(currentRoomParameters.Rewards[k].Traits, 1)
 					break
 				end
@@ -337,8 +374,10 @@ function generateForcedBoonRewardTraits(lootData)
 	end
 
 	if forcedTraits ~= nil then
+		rom.log.warning('forced traits')
 		local upgradeOptions = {}
 		for k, trait in pairs(forcedTraits) do
+			rom.log.warning('forced traits ' .. trait.Name )
 			local itemName = trait.Name
 			-- AttackBoon is named WeaponBoon in the game files
 			if itemName == 'Attack' then
@@ -455,19 +494,21 @@ function generateForcedChaosTraits()
 	end
 end
 
-local test = false
 function MyHandleEnemySpawns(encounter)
-	-- Forced Dyonisus keepsake encounter skip
-	if encounter.CanEncounterSkip then
+	-- Unrandomise Dyonisus keepsake encounter skip
+	local sourceTrait = game.HasHeroTraitValue("SkipEncounterChance")
+	
+	if sourceTrait then
 		-- Set the skip chance to 0 by default, but if the fig is forced for the encounter number
-		local sourceTrait = game.HasHeroTraitValue("SkipEncounterChance")
 		sourceTrait.SkipEncounterChance = 0
 
-		local roomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
-		if roomParameters then
-			if roomParameters.ForceFigSkipEncounterNumber == GlobalRoomEncounterDepth then
-				rom.log.warning('forced fig')
-				sourceTrait.SkipEncounterChance = 1
+		if encounter.CanEncounterSkip then
+			local roomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+			if roomParameters then
+				if roomParameters.ForceFigSkipEncounterNumber == GlobalRoomEncounterDepth then
+					rom.log.warning('forced fig')
+					sourceTrait.SkipEncounterChance = 1
+				end
 			end
 		end
 	end
@@ -527,7 +568,8 @@ function getForcedRoomRewards(run, room, setRewardIsGenerated)
 
 	-- Force the reward
 	local forcedRewards = nil
-	if roomParameters and roomParameters.Rewards then
+	-- Specific case for Echo, allow specifying the "Reward,Reward" boon reward without changing the room itself
+	if roomParameters and roomParameters.Rewards and roomParameters.Name ~= 'H_Bridge01' then
 		-- Remove the room.ForcedReward key to allow rerolling doors
 		room.ForcedReward = nil
 
@@ -585,6 +627,7 @@ function getForcedRoomRewards(run, room, setRewardIsGenerated)
 	return forcedRewards
 end
 
+local traitsGiven = false
 function MyRunStateInit()
 	-- Load every Rooms from the RunParameters, only once
 	if not GlobalIsPopulatedRooms then
@@ -603,6 +646,35 @@ function MyRunStateInit()
 		game.SetConfigOption({ Name = "FlipMapThings", Value = true })
 	else
 		game.SetConfigOption({ Name = "FlipMapThings", Value = false })
+	end
+
+	-- For debugging, add traits
+	if not game.CurrentHubRoom and game.CurrentRun and game.CurrentRun.CurrentRoom and game.SessionMapState then
+		if not traitsGiven then
+			StartingTraits =
+			{
+				{ Name = "AresWeaponBoon", Rarity = "Epic", },
+				{ Name = "ZeusSpecialBoon", Rarity = "Epic", },
+				{ Name = "ZeusManaBoon", Rarity = "Epic", },
+				{ Name = "AresStatusDoubleDamageBoon", Rarity = "Epic", },
+				{ Name = "AloneDamageBoon", Rarity = "Epic", },
+				{ Name = "RendBloodDropBoon", Rarity = "Epic", },
+				{ Name = "FocusLightningBoon", Rarity = "Epic", },
+				{ Name = "BoltRetaliateBoon", Rarity = "Epic", },
+				{ Name = "AloneDamageBoon", Rarity = "Epic", },
+				{ Name = "LuckyBoon", Rarity = "Heroic" },
+				{ Name = "RoomRewardMaxHealthTrait", },
+				{ Name = "RoomRewardMaxHealthTrait", },
+				{ Name = "RoomRewardMaxHealthTrait", },
+				{ Name = "RoomRewardMaxManaTrait", },
+				{ Name = "RoomRewardMaxManaTrait", },
+			}
+
+			for i, traitData in ipairs( StartingTraits ) do
+				game.AddTrait( game.CurrentRun.Hero, traitData.Name, traitData.Rarity, { FromLoot = true })
+			end
+			traitsGiven = true
+		end
 	end
 end
 
@@ -801,6 +873,41 @@ function _populateRoomData(biomeName, roomDepth, roomNumber)
 	return game.RoomData[createdRoomData.UniqueId]
 end
 
+function _print(element, recursive)
+	rom.log.warning('--- START ---')
+
+	if element then
+		for k,v in pairs(element) do
+			rom.log.warning('element['..k..']')
+			
+			if recursive then 
+				if type(v) == 'table' then
+					for k2,v2 in pairs(v) do
+						rom.log.warning('>>> element['..k..']['..k2..']')
+						rom.log.warning(v2)
+					end
+				else
+					rom.log.warning(v)
+				end
+			else
+				rom.log.warning(v)
+			end
+		end
+	else
+		rom.log.warning('NIL')
+	end
+	rom.log.warning('--- END ---')
+end
+
+function _getSortedCopy(t)
+	local new = {}
+    for i = 1, #t do
+        new[i] = t[i]
+    end
+
+    table.sort(new)
+    return new
+end
 --------------------------------------------------------------
 --------------------------------------------------------------
 --- Core functions modified, check @modified for the modified part
@@ -904,6 +1011,35 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 		return encounter.ProximitySpawnTriggerId
 	end
 
+	-- @modified Handle forced spawn position
+	local spawnOnIdKeys = nil
+	if encounter.Spawns and encounter.Spawns[enemy.Name] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'][1] then
+		-- Pop the first value
+		spawnOnIdKeys = { table.remove(encounter.Spawns[enemy.Name]['SpawnOnIdKeys'],1) }
+	elseif enemy.SpawnOnIdKey then
+		-- ArachneCombat forced position
+		spawnOnIdKeys = { enemy.SpawnOnIdKey }
+	end
+
+	if spawnOnIdKeys then
+		local newSpawnPointIds = {}
+		local baseMapSpawnPoints = _getSortedCopy(game.MapState.SpawnPoints)
+
+		-- Force the spawn point
+		if baseMapSpawnPoints then
+			-- Force the enemy placement
+			--enemy.PreferredSpawnPoint = nil
+			for _, spawnOnIdKey in pairs(spawnOnIdKeys) do
+				if spawnOnIdKey and baseMapSpawnPoints[spawnOnIdKey] then
+					rom.log.warning((enemy.Name or 'nil enemy') .. ' final => ' .. baseMapSpawnPoints[spawnOnIdKey])
+					return baseMapSpawnPoints[spawnOnIdKey]
+				end
+			end
+
+			shuffledSpawnPointIds = newSpawnPointIds
+		end
+	end
+
 	local shuffledSpawnPointIds = {}
 	local requiredSpawnPointType = args.RequiredSpawnPoint or enemy.RequiredSpawnPoint or encounter.RequiredSpawnPoint
 	if requiredSpawnPointType ~= nil then
@@ -926,39 +1062,11 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 		shuffledSpawnPointIds = FYShuffle(ids)
 	elseif enemy.PreferredSpawnPoint ~= nil then
 		if currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] == nil then
-			currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] = ShallowCopyTable(GetIdsByType({
-				Name = enemy
-					.PreferredSpawnPoint
-			}))
+			currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] = ShallowCopyTable( GetIdsByType({ Name = enemy.PreferredSpawnPoint }) )
 		end
-		-- @modified Remove shuffle randomness
-		shuffledSpawnPointIds = currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] or MapState.SpawnPoints
-		table.sort(shuffledSpawnPointIds)
+		shuffledSpawnPointIds = FYShuffle( currentRoom.SpawnPoints[enemy.PreferredSpawnPoint] or MapState.SpawnPoints )
 	else
-		-- @modified Remove shuffle randomness
-		shuffledSpawnPointIds = encounter.NearbySpawnPoints or MapState.SpawnPoints
-		table.sort(shuffledSpawnPointIds)
-	end
-	-- Handle forced spawn position
-	local spawnOnIdKeys = nil
-	if encounter.Spawns and encounter.Spawns[enemy.Name] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'] and encounter.Spawns[enemy.Name]['SpawnOnIdKeys'][1] then
-		-- Pop the first value
-		spawnOnIdKeys = { table.remove(encounter.Spawns[enemy.Name]['SpawnOnIdKeys'],1) }
-	elseif enemy.SpawnOnIdKey then
-		-- ArachneCombat forced position
-		spawnOnIdKeys = { enemy.SpawnOnIdKey }
-	end
-
-	if spawnOnIdKeys then
-		local newSpawnPointIds = {}
-		-- Force the manual spawned point first
-		for k, spawnOnIdKey in pairs(spawnOnIdKeys) do
-			if spawnOnIdKey and shuffledSpawnPointIds[spawnOnIdKey] then
-				table.insert(newSpawnPointIds, shuffledSpawnPointIds[spawnOnIdKey])
-			end
-		end
-
-		shuffledSpawnPointIds = newSpawnPointIds
+		shuffledSpawnPointIds = FYShuffle( encounter.NearbySpawnPoints or MapState.SpawnPoints )
 	end
 
 	args.SpawnAwayFromTypes = args.SpawnAwayFromTypes or enemy.SpawnAwayFromTypes
@@ -1040,10 +1148,10 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 end
 
 function MySetupArachneCombatEncounter(eventSource, args)
+	rom.log.warning('MySetupArachneCombatEncounter')
 	game.SpawnArachneCocoons(eventSource, args)
 
 	-- @modified Force the reward Cocoon
-	-- local roomRewardCocoon = MapState.ActiveObstacles[GetRandomValue(CurrentRun.CurrentRoom.CoocoonIds)]
 	local roomRewardCocoon = game.MapState.ActiveObstacles[game.CurrentRun.CurrentRoom.CoocoonIds[1]]
 
 	roomRewardCocoon.OnDeathFunctionName = "SpawnRoomReward"
@@ -1367,4 +1475,55 @@ function MySpawnRewardCages(room, args)
 			end
 		end
 	end
+end
+
+function MyEchoChoice(source, args, screen)
+	RemoveInputBlock({ Name = "PlayTextLines" })
+
+	-- @modified Forced traits
+	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+	if currentRoomParameters and currentRoomParameters.Traits then
+		source.UpgradeOptions = {}
+		for _,trait in pairs(currentRoomParameters.Traits) do
+			table.insert(source.UpgradeOptions, {
+				ItemName = trait,
+				Type = 'Trait',
+				Rarity = 'Common'
+			})
+		end
+	else
+		RandomSynchronize( 9 )
+
+		source.UpgradeOptions = {}
+		source.BlockReroll = true
+		local options = ShallowCopyTable( args.UpgradeOptions )
+		local eligibleOptions = {}
+		for i, option in pairs(options) do
+			if TraitData[option.ItemName] and IsTraitEligible( TraitData[option.ItemName] ) then
+				table.insert(eligibleOptions, option)
+			end
+		end
+		if not CurrentRun.LastReward then
+			CurrentRun.LastReward = { Type = "Consumable", Name = "MaxHealthDrop", DisplayName = "MaxHealthDrop" }
+		end
+
+		for i = 1, 3 do
+			if not IsEmpty(eligibleOptions) then
+				local option = RemoveRandomValue( eligibleOptions )
+				table.insert( source.UpgradeOptions, option )
+			end
+		end
+	end
+
+	_print(source.UpgradeOptions, true)
+
+	if args.PortraitShift ~= nil then
+		args.PortraitShift.Id = screen.PortraitId
+		Move( args.PortraitShift )
+	end
+	MedeaCursePreChoicePresentation( source, args )
+	OpenUpgradeChoiceMenu( source, args )
+	screen.OnCloseFinishedFunctionName = "EchoPostChoicePresentation"
+
+	AddInputBlock({ Name = "PlayTextLines" })
 end

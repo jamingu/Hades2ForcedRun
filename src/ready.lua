@@ -21,10 +21,12 @@ end)
 modutil.mod.Path.Wrap("ChooseRoomReward", function(base, run, room, rewardStoreName, previouslyChosenRewards, args)
 	-- Room generation in Fields is specific. It calls this method once for the door with the args "Door", then again for each "cage" rewards without the arg
 	-- The first call should not generate the actual reward to account for this
+	-- @todo: find another solution, has it blocks the first room reroll
 	local setRewardIsGenerated = true
-	if args and args.Door then
-		setRewardIsGenerated = false
-	end
+	--if args and args.Door then
+	--	rom.log.warning('has DOOR')
+	--	setRewardIsGenerated = false
+	--end
 
 	local forcedRewards = getForcedRoomRewards(run, room, setRewardIsGenerated)
 	if forcedRewards then
@@ -131,6 +133,11 @@ end)
 -- Cage rewards (Fields) spawn location
 modutil.mod.Path.Wrap("SpawnRewardCages", function(base, room, args)
 	MySpawnRewardCages(room, args)
+end)
+
+-- Echo
+modutil.mod.Path.Wrap("EchoChoice", function(base, source, args, screen)
+	MyEchoChoice(source, args, screen)
 end)
 
 
