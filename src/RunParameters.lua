@@ -309,7 +309,10 @@ RunParameters = {
 					{
 						Name = 'F_Combat02',
 						Rewards = {
-							{ Name = 'Selene' }
+							{
+								Name = 'Boon',
+								BoonGod = 'Selene',
+							}
 						},
 					},
 					{
@@ -657,12 +660,12 @@ RunParameters = {
 							},
 							{
 								Name = 'Pom',
-								LocationId = '621502',
+								LocationKeyId = '1',
 							},
 							{
 								Name = 'Boon',
 								BoonGod = 'Hermes',
-								LocationId = '715356',
+								LocationKeyId = '2',
 								Traits = {
 									--The first traits are in dublon because they are rolled twice because the pom is taken first
 									--and rewards are rerolled in the fields if they are not taken first (via CreateBoonLootButtons, one of the check is false and call SetTraitsOnLoot)
@@ -685,8 +688,8 @@ RunParameters = {
 							}
 						},
 						FieldsBonusRewards = {
-							{ Name = 'MaxManaDropSmall', LocationId = '572849', },
-							{ Name = 'RoomMoneyTinyDrop', LocationId = '736822', },
+							{ Name = 'MaxManaDropSmall', LocationKeyId = 1, },
+							{ Name = 'RoomMoneyTinyDrop', LocationKeyId = 2, },
 						},
 						FieldsRewardsCount = 2,
 						ForceFigSkipEncounterNumber = 2,
@@ -722,10 +725,9 @@ RunParameters = {
 									}
 								}
 							},
-							
 						},
 					}
-				},--]]
+				},
 				{
 					{
 						Name = 'H_MiniBoss02',
@@ -743,23 +745,24 @@ RunParameters = {
 							},
 						},
 					},
-					--[[{
+					{
 						Name = 'H_Combat14',
 						Rewards = {
 							{ Name = 'RoomMoneyDrop' },
 							{ Name = 'MaxHealthDrop' },
 						},
 						FieldsRewardsCount = 2,
-					}]]
+					}
 				},
 				{
 					{
 						Name = 'H_Bridge01',
+						Encounter = 'Story_Echo_01',
 						Traits = { 'DiminishingHealthAndManaBoon', 'EchoDoubleLevelBoon', 'EchoLastReward'},
 						Rewards = {
 							{
 								Name = 'Boon',
-								BoonGod = 'Any',
+								BoonGod = 'Any', -- Needs to be Any to match any god Echo will spawn
 								Traits = {
 									-- Need to double the rewards for Echo (generated twice)
 									{
@@ -781,7 +784,178 @@ RunParameters = {
 						Name = 'H_Combat14',
 						FieldsRewardsCount = 2,
 					}
+				},
+				{
+					{
+						Name = 'H_Combat11',
+						FieldsRewardsCount = 3,
+						Rewards = {
+							{
+								-- empty reward for the global room
+							},
+							{ Name = 'Pom' },
+							{ Name = 'RoomMoneyDrop' },
+							{ Name = 'MaxHealthDrop' },
+						}
+					},
+					{
+						Name = 'H_Combat11',
+						IsFlipped = true,
+						FieldsRewardsCount = 3,
+						StartPoint = "755854", -- Right side of this room
+						Rewards = {
+							{
+								-- empty reward for the global room
+							},
+							{ Name = 'MaxManaDrop', LocationKeyId = 3 },
+							{
+								Name = 'Boon',
+								BoonGod = 'Zeus',
+								Traits = {
+									{
+										{ Name = 'Sprint', Rarity = 'Common' },
+										{ Name = 'CastAnywhere', Rarity = 'Common' },
+										{ Name = 'FocusLightning', Rarity = 'Common' },
+									},
+								},
+								LocationKeyId = 4
+							},
+							{
+								Name = 'Boon',
+								BoonGod = 'Selene',
+								Traits = { 'Polymorph', 'Leap', 'Transform' },
+								LocationKeyId = 1
+							 },
+						},
+						FieldsBonusRewards = {
+							{ Name = 'GiftDrop', LocationKeyId = 1 },
+							{ Name = 'RoomMoneyTinyDrop', LocationKeyId = 2 },
+						},
+						Encounters = {
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'CorruptedShadeSmall_Elite', Count = 3 },
+											{ Name = 'CorruptedShadeMedium_Elite', Count = 2 },
+											{ Name = 'CorruptedShadeLarge_Elite', Count = 1 },
+										},
+									}
+								}
+							},
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Screamer2', Count = 1 },
+											{ Name = 'Lycanthrope', Count = 2 },
+											
+										},
+										SpawnOrder = {'Screamer2', 'Lycanthrope', 'Lycanthrope'}
+									}
+								}
+							},
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'Lamia_Elite', Count = 1 },
+											{ Name = 'Lycanthrope', Count = 2 },
+											{ Name = 'Mourner', Count = 3 },
+											
+										},
+										SpawnOrder = {'Lamia_Elite', 'Lycanthrope', 'Lycanthrope', 'Mourner', 'Mourner', 'Mourner'}
+									}
+								}
+							},
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'BrokenHearted', Count = 10 },
+											{ Name = 'Lycanthrope', Count = 2 },
+											{ Name = 'FogEmitter2', Count = 1 },
+											
+										},
+										SpawnOrder = {'Lycanthrope', 'BrokenHearted', 'Lycanthrope', 'FogEmitter2', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted', 'BrokenHearted'}
+									}
+								}
+							}
+						},
+					}
+				},
+				{
+					{
+						Name = 'H_PreBoss01',
+						IsZagreusForced = false,
+						IsNemesisForced = false,
+						ShopContent = {
+							{
+								Reward = 'Boon',
+								BoonGod = 'Hera',
+								Traits = {
+									{
+										{ Name = 'OmegaHeraProjectile', Rarity = 'Common' },
+										{ Name = 'ElementalRarityUpgrade' },
+										{ Name = 'DamageSharePotency', Rarity = 'Common' },
+									},
+								},
+							},
+							{
+								Reward = 'MaxHealthDrop',
+							},
+							{
+								Reward = 'TalentDrop',
+							},
+						}
+					},
+					{
+						Name = 'H_PreBoss01',
+						Rewards = {
+							{ Name = 'MaxManaDrop' }
+						},
+					},
+					-- There's need to be a room here or the game bugs, even though it should not be generated ...
+					{
+						Name = 'H_Combat14',
+						FieldsRewardsCount = 2,
+					}
+				},
+				{
+					{
+						Name = 'H_Boss01',
+						BossName = 'Cerberus',
+						BossParameter = 'CerberusSpawns05',
+					},
+					-- There's need to be a room here or the game bugs, even though it should not be generated ...
+					{
+						Name = 'H_Combat14',
+						FieldsRewardsCount = 2,
+					}
+				},]]
+				{
+					{
+						Name = 'H_PostBoss01',
+						IsForcedWell = true,
+                    	WellContent = {
+							{
+								{Name = 'TemporaryDoorHealTrait', Type = 'Trait'},
+								{Name = 'LimitedSwapBonusTrait', Type = 'Trait'},
+								{Name = 'TemporaryDiscountTrait', Type = 'Trait'},
+							},
+						},
+					}
 				}
+			}
+		},
+		I = {
+			Rooms = {
+				{
+					{
+						Name = 'I_Intro',
+						Encounter = 'Empty',
+					}
+				},
 			}
 		},
 		Chaos = {

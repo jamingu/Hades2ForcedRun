@@ -127,6 +127,8 @@ modutil.mod.Path.Wrap("SelectFieldsDoorCageCount", function(base, run, room)
 		return forcedFieldsRewardCount
 	end
 
+	room.MaxDoorDepthChanceTable = {}
+
 	return base(run, room)
 end)
 
@@ -139,6 +141,15 @@ end)
 modutil.mod.Path.Wrap("EchoChoice", function(base, source, args, screen)
 	MyEchoChoice(source, args, screen)
 end)
+
+-- Selene forced trait
+modutil.mod.Path.Wrap("PregenerateSpells", function(base, screen)
+	MyPregenerateSpells(screen)
+end)
+modutil.mod.Path.Wrap("GetEligibleSpells", function(base, screen)
+	return MyGetEligibleSpells(screen)
+end)
+
 
 
 --------------------------------------------------------------------------------------------------

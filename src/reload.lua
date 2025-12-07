@@ -29,6 +29,7 @@
 -- unrandomise random pom affected boon
 -- handle that taking a Chaos in the fields does not advance the run position
 -- Handle surface runs
+-- Selene spells order/moon phase
 
 -- "Global" variables to handle the position in the run
 local GlobalIsPopulatedRooms
@@ -277,6 +278,8 @@ end
 function generateForcedRewardTraits(lootData, args)
 	local upgradeOptions = nil
 
+	rom.log.warning(lootData.SpeakerName)
+
 	if lootData.GodLoot or (lootData.SpeakerName and lootData.SpeakerName == 'Hermes') or (lootData.SpeakerName and lootData.SpeakerName == 'Athena') then
 		upgradeOptions = generateForcedBoonRewardTraits(lootData)
 	elseif lootData.Name == 'WeaponUpgrade' then
@@ -294,33 +297,6 @@ function generateForcedRewardTraits(lootData, args)
 		return true
 	else
 		return false
-	end
-end
-
-function generateForcedStackUpgradeRewardTraits(lootData)
-	-- @todo: improve this: handle non existing boons like no attack, only propose boons the User has, etc.
-	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
-
-	local forcedTraits = nil
-	if currentRoomParameters and currentRoomParameters.Rewards then
-		for k,reward in pairs(currentRoomParameters.Rewards) do
-			if reward.Traits then
-				forcedTraits = table.remove(currentRoomParameters.Rewards[k].Traits, 1)
-				break
-			end
-		end
-	end
-
-	if forcedTraits ~= nil then
-		local upgradeOptions = {}
-		for _, trait in pairs(forcedTraits) do			
-			table.insert(upgradeOptions, {
-				Type = 'Trait',
-				ItemName = trait.Name,
-			})
-		end
-
-		return upgradeOptions
 	end
 end
 
@@ -342,11 +318,9 @@ function generateForcedBoonRewardTraits(lootData)
 		elseif currentRoomParameters.Rewards then
 			-- Room Boon reward
 			for k,reward in pairs(currentRoomParameters.Rewards) do
-				rom.log.warning('k,reward in pairs')
 				-- Return the traits of the first matching god in the list (or the first if "Any" is specified in the parameters to handle first room keepsakes AND Echo)
 				-- @todo: better handle god keepsakes to be used any Biome in the run
 				if reward.Traits and (reward.BoonGod == speakerName or reward.BoonGod == 'Any') then
-					rom.log.warning('ok')
 					forcedTraits = table.remove(currentRoomParameters.Rewards[k].Traits, 1)
 					break
 				end
@@ -374,10 +348,8 @@ function generateForcedBoonRewardTraits(lootData)
 	end
 
 	if forcedTraits ~= nil then
-		rom.log.warning('forced traits')
 		local upgradeOptions = {}
 		for k, trait in pairs(forcedTraits) do
-			rom.log.warning('forced traits ' .. trait.Name )
 			local itemName = trait.Name
 			-- AttackBoon is named WeaponBoon in the game files
 			if itemName == 'Attack' then
@@ -494,6 +466,33 @@ function generateForcedChaosTraits()
 	end
 end
 
+function generateForcedStackUpgradeRewardTraits(lootData)
+	-- @todo: improve this: handle non existing boons like no attack, only propose boons the User has, etc.
+	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+
+	local forcedTraits = nil
+	if currentRoomParameters and currentRoomParameters.Rewards then
+		for k,reward in pairs(currentRoomParameters.Rewards) do
+			if reward.Traits then
+				forcedTraits = table.remove(currentRoomParameters.Rewards[k].Traits, 1)
+				break
+			end
+		end
+	end
+
+	if forcedTraits ~= nil then
+		local upgradeOptions = {}
+		for _, trait in pairs(forcedTraits) do			
+			table.insert(upgradeOptions, {
+				Type = 'Trait',
+				ItemName = trait.Name,
+			})
+		end
+
+		return upgradeOptions
+	end
+end
+
 function MyHandleEnemySpawns(encounter)
 	-- Unrandomise Dyonisus keepsake encounter skip
 	local sourceTrait = game.HasHeroTraitValue("SkipEncounterChance")
@@ -542,6 +541,9 @@ function MyStartRoom(currentRun, room)
 	if currentRoom then
 		if currentRoom.BossName == 'Hecate' and currentRoom.BossParameter then
 			game.UnitSetData[currentRoom.BossName][currentRoom.BossName].AIStages[2].MidPhaseWeapons = { currentRoom.BossParameter }
+		elseif currentRoom.BossName == 'Cerberus' and currentRoom.BossParameter then
+			rom.log.warning('ok')
+			game.UnitSetData['InfestedCerberus']['InfestedCerberus'].AIStages[2].RandomSpawnEncounter = { currentRoom.BossParameter }
 		end
 		--Scylla fight logic is set in MyApplyScyllaFightSpotlight
 	end
@@ -581,18 +583,20 @@ function getForcedRoomRewards(run, room, setRewardIsGenerated)
 				end
 
 				if reward.Name == 'Boon' then
-					forcedRewards = {
-						{
-							Name = reward.Name,
-							LootName = reward.BoonGod .. 'Upgrade',
-						},
-					}
-				elseif reward.Name == 'Selene' then
-					forcedRewards = {
-						{
-							Name = 'SpellDrop',
-						},
-					}
+					if reward.BoonGod == 'Selene' then
+						forcedRewards = {
+							{
+								Name = 'SpellDrop',
+							},
+						}
+					else
+						forcedRewards = {
+							{
+								Name = reward.Name,
+								LootName = reward.BoonGod .. 'Upgrade',
+							}
+						}
+					end
 				elseif reward.Name == 'Hammer' then
 					forcedRewards = {
 						{
@@ -733,6 +737,7 @@ function _getNextBiomeName(biomeName)
 	elseif biomeName == 'G' then
 		return 'H'
 	elseif biomeName == 'H' then
+		rom.log.warning('I')
 		return 'I'
 	end
 end
@@ -861,8 +866,11 @@ function _populateRoomData(biomeName, roomDepth, roomNumber)
 
 	-- Fields specific
 	createdRoomData.FieldsRewardsCount = roomParameters.FieldsRewardsCount
+
+	-- Force the Fields starting point, from the starting points: 621442, 723141, 723145
+	-- @todo: improve this to be handled with a key and not the value directly
 	if roomParameters.StartPoint then
-		createdRoomData.DebugHeroStartPoint = roomParameters.StartPoint -- Force the Fields starendingting point, from the starting points: 621442, 723141, 723145
+		createdRoomData.DebugHeroStartPoint = roomParameters.StartPoint 
 	end
 
 	-- Set a Unique RoomData name, and add it to the global variables list of rooms
@@ -1396,39 +1404,47 @@ function MySpawnRewardCages(room, args)
 	--@modified
 	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 
-	local rewardSpawnPoints = GetIdsByType({ Name = "LootPoint" })
-
+	local rewardSpawnPoints = game.GetIdsByType({ Name = "LootPoint" })
 	table.sort( rewardSpawnPoints )
 	for index, cageReward in ipairs( room.CageRewards ) do
-		-- Remove randomness
-		local locationFound = false;
+
 		local spawnPointId
-		for k,rewardSpawnPoint in pairs(rewardSpawnPoints) do
-			if not locationFound and currentRoomParameters and currentRoomParameters.Rewards then
-				for _,reward in pairs(currentRoomParameters.Rewards) do
-					if not locationFound and not reward.IsLocationGenerated and reward.LocationId and tostring(reward.LocationId) == tostring(rewardSpawnPoint) then
-						reward.IsLocationGenerated = true
-						spawnPointId = table.remove(rewardSpawnPoints,k)
-						locationFound = true
+		if currentRoomParameters then
+			for _,rewardParameters in pairs(currentRoomParameters.Rewards) do
+				if rewardParameters.Name then
+					local rewardFound = false
+					-- Match on the Reward. @todo improve this to be cleaner and handle every case
+					if cageReward.RewardType == 'Boon' and rewardParameters.Name == 'Boon' then
+						rewardFound = true
+					elseif cageReward.RewardType == 'SpellDrop' and rewardParameters.Name == 'Boon' and rewardParameters.BoonGod == 'Selene' then
+						rewardFound = true
+					elseif cageReward.RewardType == rewardParameters.Name then
+						rewardFound = true
+					end
+
+					if rewardFound and rewardParameters.LocationKeyId then
+						spawnPointId = rewardSpawnPoints[rewardParameters.LocationKeyId]
 						break
 					end
 				end
 			end
 		end
 
+
 		-- No location found, fallback to the game code for safety
 		if not spawnPointId then
+			rom.log.warning('no cage spawn point found ' )
 			spawnPointId = game.RemoveRandomValue( rewardSpawnPoints )
 		end
-		
+
 		local obstacleName = "FieldsRewardCage"
 		local rewardCage = DeepCopyTable( ObstacleData[obstacleName] )
 		rewardCage.ObjectId = SpawnObstacle({ Name = obstacleName, DestinationId = spawnPointId, Group = "Standing", TriggerOnSpawn = false })
-		rewardCage.SpawnPointId = spawnPointId
+		rewardCage.SpawnPointId = spawnPointId			
 		SetupObstacle( rewardCage )
 		
 		rewardCage.Encounter = cageReward.Encounter
-		local rewardOverride = cageReward.RewardType or ChooseRoomReward( CurrentRun, {}, room.RewardStoreName )
+		local rewardOverride = cageReward.RewardType --or ChooseRoomReward( CurrentRun, {}, room.RewardStoreName )
 		local reward = SpawnRoomReward( room, { RewardOverride = rewardOverride, LootName = cageReward.ForceLootName, SpawnRewardOnId = spawnPointId, AutoLoadPackages = true } )
 		rewardCage.RewardId = reward.ObjectId
 
@@ -1448,7 +1464,7 @@ function MySpawnRewardCages(room, args)
 	-- Remove randomness for optionalRewards
 	if currentRoomParameters and currentRoomParameters.FieldsBonusRewards then
 		for _,FieldsBonusReward in pairs (currentRoomParameters.FieldsBonusRewards) do
-			local bonusRewardSpawnId = FieldsBonusReward.LocationId or game.RemoveRandomValue( bonusRewardSpawnPoints )
+			local bonusRewardSpawnId = bonusRewardSpawnPoints[FieldsBonusReward.LocationKeyId] or game.RemoveRandomValue( bonusRewardSpawnPoints )
 			if bonusRewardSpawnId ~= nil then
 				local rewardOverride = FieldsBonusReward.Name
 
@@ -1515,8 +1531,6 @@ function MyEchoChoice(source, args, screen)
 		end
 	end
 
-	_print(source.UpgradeOptions, true)
-
 	if args.PortraitShift ~= nil then
 		args.PortraitShift.Id = screen.PortraitId
 		Move( args.PortraitShift )
@@ -1526,4 +1540,65 @@ function MyEchoChoice(source, args, screen)
 	screen.OnCloseFinishedFunctionName = "EchoPostChoicePresentation"
 
 	AddInputBlock({ Name = "PlayTextLines" })
+end
+
+function MyPregenerateSpells(screen)
+	SessionMapState.SelectedSpells = {}
+
+	local eligibleSpells = GetEligibleSpells( screen )
+
+	-- Remove randomness
+	table.sort(eligibleSpells)
+
+	local items = 0
+	while items < 3 and not IsEmpty( eligibleSpells ) do
+		local spellName = table.remove( eligibleSpells,1 )
+		table.insert(SessionMapState.SelectedSpells, spellName )
+		items = items + 1
+	end
+
+	local duoEligible = false
+	for _, spellName in pairs( SessionMapState.SelectedSpells ) do
+		local spellData = SpellData[spellName]
+		for _, talentName in pairs(spellData.Talents.Legendary) do
+			local talentData = TraitData[talentName]
+			if talentData.IsDuoBoon and IsGameStateEligible({}, talentData.GameStateRequirements ) then
+				SessionMapState.DuoTalentEligible = true
+				SessionMapState.DuoTalentEligibleSpell[spellName] = true
+				SessionMapState.DuoTalentEligibleGender[ LootData[talentData.LinkedGod ].Gender ] = true
+			end
+		end
+	end
+end
+
+function MyGetEligibleSpells(screen)
+	if not IsEmpty(SessionMapState.SelectedSpells) then
+		return SessionMapState.SelectedSpells
+	end
+
+	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+
+	local eligibleSpells = {}
+	if currentRoomParameters and currentRoomParameters.Rewards then
+		for _, reward in pairs(currentRoomParameters.Rewards) do
+			if reward.BoonGod == 'Selene' then
+				for _, trait in pairs(reward.Traits) do
+					rom.log.warning('Selene trait inserted ' .. trait)
+					table.insert( eligibleSpells, trait )
+				end
+			end
+		end
+	end
+
+	-- Defalt to in game code
+	if not eligibleSpells[1] then
+		args = args or {}
+		for spellName, spellData in pairs( SpellData ) do
+			if screen.StripRequirements or spellData.GameStateRequirements == nil or IsGameStateEligible( spellData, spellData.GameStateRequirements ) then
+				table.insert( eligibleSpells, spellData.Name )
+			end
+		end
+	end
+
+	return eligibleSpells
 end
