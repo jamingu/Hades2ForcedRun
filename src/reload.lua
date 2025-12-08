@@ -41,7 +41,7 @@ local GlobalRoomEncounterDepth
 --Force the generation of the Opening room
 function generateForcedOpeningRoom(currentRun, args)
 	--@todo handle not F starting Biome
-	local startingBiomeName = 'H'
+	local startingBiomeName = 'I'
 	local startingRoomData = game.RoomData[startingBiomeName .. '_1_1']
 
 	local startingRoom = game.CreateRoom(startingRoomData, args)
@@ -121,18 +121,41 @@ function generateForcedShopOptions(args)
 				for k, shopContent in pairs(currentRoom.ShopContent) do
 					-- For information, order of shop appearance seems weird (2,3,1)
 					local shopOption
-					if shopContent.Reward == 'Boon' then
-						-- ResourceCosts = {Money = 150}
+
+					if shopContent.BoonGod == 'Hermes' then
+						local money = 150
+						if shopContent.Reward == 'BoostedBoon' then
+							money = 500
+						end
+
+						shopOption = {
+							Name = 'ShopHermesUpgrade',
+							Type = 'Consumable',
+							ResourceCosts = { Money = money }
+						}
+					elseif shopContent.Reward == 'Boon' or shopContent.Reward == 'BoostedBoon' then
+						local money
+						local name
+
+						if shopContent.Reward == 'BoostedBoon' then
+							name = 'BoostedRandomLoot'
+							money = 450
+						else
+							name = 'RandomLoot'
+							money = 150
+						end
+
 						local tmpArgs = {
 							ForceLootName = shopContent.BoonGod .. 'Upgrade',
 							BoughtFromShop = true,
 							DoesNotBlockExit = true,
-							ResourceCosts = { Money = 150 }
+							ResourceCosts = { Money = money }
 						}
+
 						shopOption = {
-							Name = 'RandomLoot',
+							Name = name,
 							Type = 'Boon',
-							Args = tmpArgs
+							Args = tmpArgs,
 						}
 					elseif shopContent.Reward == 'Hammer' then
 						shopOption = {
@@ -157,10 +180,17 @@ function generateForcedShopOptions(args)
 							Type = 'Consumable',
 							ForceLootName = shopContent.BoonGod .. 'Upgrade',
 						}
+						
+					elseif shopContent.Reward == 'WeaponPointsRareDrop' then
+						shopOption = {
+							Name = 'WeaponPointsRareDrop',
+							Type = 'Consumable',
+							CostOverride = 1300
+						}
 					else
 						shopOption = {
 							Name = shopContent.Reward,
-							Type = 'Consumable',
+							Type = 'Consumable'
 						}
 					end
 
@@ -278,8 +308,6 @@ end
 function generateForcedRewardTraits(lootData, args)
 	local upgradeOptions = nil
 
-	rom.log.warning(lootData.SpeakerName)
-
 	if lootData.GodLoot or (lootData.SpeakerName and lootData.SpeakerName == 'Hermes') or (lootData.SpeakerName and lootData.SpeakerName == 'Athena') then
 		upgradeOptions = generateForcedBoonRewardTraits(lootData)
 	elseif lootData.Name == 'WeaponUpgrade' then
@@ -329,7 +357,7 @@ function generateForcedBoonRewardTraits(lootData)
 			-- Shop option
 			for k, shopElement in pairs(currentRoomParameters.ShopContent) do
 				-- Regular Boon
-				if shopElement.Reward == 'Boon' and shopElement.BoonGod == speakerName then
+				if (shopElement.Reward == 'Boon' or shopElement.Reward == 'BoostedBoon') and shopElement.BoonGod == speakerName then
 					if currentRoomParameters.ShopContent[k].Traits and currentRoomParameters.ShopContent[k].Traits[1] then
 						forcedTraits = table.remove(currentRoomParameters.ShopContent[k].Traits, 1)
 						break
@@ -356,7 +384,9 @@ function generateForcedBoonRewardTraits(lootData)
 				itemName = 'Weapon'
 			end
 
-			itemName = itemName .. 'Boon'
+			if not string.find(itemName, "Boon")  then
+				itemName = itemName .. 'Boon'
+			end
 
 			-- Concatenate the god name for "WeapongUpgrades": attack/special/cast/sprint/mana
 			if game.LootSetData[speakerName] and game.LootSetData[speakerName][speakerName .. 'Upgrade'] and game.LootSetData[speakerName][speakerName .. 'Upgrade'].WeaponUpgrades then
@@ -493,8 +523,27 @@ function generateForcedStackUpgradeRewardTraits(lootData)
 	end
 end
 
-function MyHandleEnemySpawns(encounter)
+function MyHandleEncounterPreSpawns(encounter)
 	-- Unrandomise Dyonisus keepsake encounter skip
+	local sourceTrait = game.HasHeroTraitValue("SkipEncounterChance")
+
+	if sourceTrait then
+		-- Set the skip chance to 0 by default, but if the fig is forced for the encounter number
+		sourceTrait.SkipEncounterChance = 0
+
+		if encounter.CanEncounterSkip then
+			local roomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+			if roomParameters then
+				if roomParameters.ForceFigSkipEncounterNumber == GlobalRoomEncounterDepth then
+					sourceTrait.SkipEncounterChance = 1
+				end
+			end
+		end
+	end
+end
+
+function MyHandleEnemySpawns(encounter)
+	-- Unrandomise Dyonisus keepsake encounter skip. Dublon of MyHandleEncounterPreSpawns because preSpawn is not always called
 	local sourceTrait = game.HasHeroTraitValue("SkipEncounterChance")
 	
 	if sourceTrait then
@@ -505,7 +554,6 @@ function MyHandleEnemySpawns(encounter)
 			local roomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 			if roomParameters then
 				if roomParameters.ForceFigSkipEncounterNumber == GlobalRoomEncounterDepth then
-					rom.log.warning('forced fig')
 					sourceTrait.SkipEncounterChance = 1
 				end
 			end
@@ -542,7 +590,6 @@ function MyStartRoom(currentRun, room)
 		if currentRoom.BossName == 'Hecate' and currentRoom.BossParameter then
 			game.UnitSetData[currentRoom.BossName][currentRoom.BossName].AIStages[2].MidPhaseWeapons = { currentRoom.BossParameter }
 		elseif currentRoom.BossName == 'Cerberus' and currentRoom.BossParameter then
-			rom.log.warning('ok')
 			game.UnitSetData['InfestedCerberus']['InfestedCerberus'].AIStages[2].RandomSpawnEncounter = { currentRoom.BossParameter }
 		end
 		--Scylla fight logic is set in MyApplyScyllaFightSpotlight
@@ -631,7 +678,7 @@ function getForcedRoomRewards(run, room, setRewardIsGenerated)
 	return forcedRewards
 end
 
-local traitsGiven = false
+local debugTraitsGiven = true
 function MyRunStateInit()
 	-- Load every Rooms from the RunParameters, only once
 	if not GlobalIsPopulatedRooms then
@@ -643,6 +690,10 @@ function MyRunStateInit()
 			end
 		end
 		GlobalIsPopulatedRooms = true
+
+		-- Change the requirements for the Chronos appearance when leaving I_Preboss
+		_print(game.ObstacleData.ChronosBossDoor.SetupEvents[3])
+		game.ObstacleData.ChronosBossDoor.SetupEvents[3].GameStateRequirements[1].Path = { "CurrentRun", "CurrentRoom", "BaseRoomName" }
 	end
 
 	-- Force rooms Flip : also check the User not in the Hub (since the game stores CurrentRun as the last run)
@@ -653,32 +704,42 @@ function MyRunStateInit()
 	end
 
 	-- For debugging, add traits
-	if not game.CurrentHubRoom and game.CurrentRun and game.CurrentRun.CurrentRoom and game.SessionMapState then
-		if not traitsGiven then
-			StartingTraits =
-			{
-				{ Name = "AresWeaponBoon", Rarity = "Epic", },
-				{ Name = "ZeusSpecialBoon", Rarity = "Epic", },
-				{ Name = "ZeusManaBoon", Rarity = "Epic", },
-				{ Name = "AresStatusDoubleDamageBoon", Rarity = "Epic", },
-				{ Name = "AloneDamageBoon", Rarity = "Epic", },
-				{ Name = "RendBloodDropBoon", Rarity = "Epic", },
-				{ Name = "FocusLightningBoon", Rarity = "Epic", },
-				{ Name = "BoltRetaliateBoon", Rarity = "Epic", },
-				{ Name = "AloneDamageBoon", Rarity = "Epic", },
-				{ Name = "LuckyBoon", Rarity = "Heroic" },
-				{ Name = "RoomRewardMaxHealthTrait", },
-				{ Name = "RoomRewardMaxHealthTrait", },
-				{ Name = "RoomRewardMaxHealthTrait", },
-				{ Name = "RoomRewardMaxManaTrait", },
-				{ Name = "RoomRewardMaxManaTrait", },
-			}
+	if not debugTraitsGiven and not game.CurrentHubRoom and game.CurrentRun and game.CurrentRun.CurrentRoom and game.SessionMapState then
+		StartingTraits =
+		{
+			{ Name = "AresWeaponBoon",             Rarity = "Epic", },
+			{ Name = "ZeusSpecialBoon",            Rarity = "Epic", },
+			{ Name = "ZeusManaBoon",               Rarity = "Epic", },
+			{ Name = "AresStatusDoubleDamageBoon", Rarity = "Epic", },
+			{ Name = "AloneDamageBoon",            Rarity = "Epic", },
+			{ Name = "RendBloodDropBoon",          Rarity = "Epic", },
+			{ Name = "FocusLightningBoon",         Rarity = "Epic", },
+			{ Name = "BoltRetaliateBoon",          Rarity = "Epic", },
+			{ Name = "AloneDamageBoon",            Rarity = "Epic", },
+			{ Name = "LuckyBoon",                  Rarity = "Heroic" },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxHealthTrait", },
+			{ Name = "RoomRewardMaxManaTrait", },
+			{ Name = "RoomRewardMaxManaTrait", },
+			{ Name = "RoomRewardMaxManaTrait", },
+			{ Name = "RoomRewardMaxManaTrait", },
+			{ Name = "RoomRewardMaxManaTrait", },
+			{ Name = "RoomRewardMaxManaTrait", },
+		}
 
-			for i, traitData in ipairs( StartingTraits ) do
-				game.AddTrait( game.CurrentRun.Hero, traitData.Name, traitData.Rarity, { FromLoot = true })
-			end
-			traitsGiven = true
+		for i, traitData in ipairs(StartingTraits) do
+			game.AddTrait(game.CurrentRun.Hero, traitData.Name, traitData.Rarity, { FromLoot = true })
 		end
+		debugTraitsGiven = true
 	end
 end
 
@@ -737,7 +798,6 @@ function _getNextBiomeName(biomeName)
 	elseif biomeName == 'G' then
 		return 'H'
 	elseif biomeName == 'H' then
-		rom.log.warning('I')
 		return 'I'
 	end
 end
@@ -819,7 +879,7 @@ function _populateRoomData(biomeName, roomDepth, roomNumber)
 	end
 
 	-- Specific case of Shop
-	if string.find(roomParameters.Name, '_Shop') then
+	if string.find(roomParameters.Name, '_Shop') or string.find(roomParameters.Name, '_PreBoss') then
 		createdRoomData.IsShop = true
 		-- Handle Zagreus contract spawn in shop, set in the global StoreData variable
 		if roomParameters.IsZagreusForced then
@@ -852,9 +912,6 @@ function _populateRoomData(biomeName, roomDepth, roomNumber)
 	createdRoomData.WellContent = roomParameters.WellContent
 	createdRoomData.WellSpawnOnIdKey = roomParameters.WellSpawnOnIdKey
 	createdRoomData.Flipped = roomParameters.IsFlipped or false
-
-	-- Remove a part of the randomness for Fields cage rewards count
-	createdRoomData.MaxDoorDepthChanceTable = true
 
 	-- Boss Name/Parameter
 	createdRoomData.BossName = roomParameters.BossName
@@ -1156,7 +1213,6 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 end
 
 function MySetupArachneCombatEncounter(eventSource, args)
-	rom.log.warning('MySetupArachneCombatEncounter')
 	game.SpawnArachneCocoons(eventSource, args)
 
 	-- @modified Force the reward Cocoon
@@ -1583,7 +1639,6 @@ function MyGetEligibleSpells(screen)
 		for _, reward in pairs(currentRoomParameters.Rewards) do
 			if reward.BoonGod == 'Selene' then
 				for _, trait in pairs(reward.Traits) do
-					rom.log.warning('Selene trait inserted ' .. trait)
 					table.insert( eligibleSpells, trait )
 				end
 			end

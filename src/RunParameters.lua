@@ -644,7 +644,7 @@ RunParameters = {
 		},
 		H = {
 			Rooms = {
-				--[[{
+				{
 					{
 						Name = 'H_Intro',
 						Encounter = 'Empty',
@@ -932,7 +932,7 @@ RunParameters = {
 						Name = 'H_Combat14',
 						FieldsRewardsCount = 2,
 					}
-				},]]
+				},
 				{
 					{
 						Name = 'H_PostBoss01',
@@ -950,11 +950,194 @@ RunParameters = {
 		},
 		I = {
 			Rooms = {
-				{
+				--[[{
 					{
 						Name = 'I_Intro',
 						Encounter = 'Empty',
 					}
+				},
+				{
+					{
+						Name = 'I_Combat19',
+						Encounter = 'GeneratedIChronosIntro',
+						IsFlipped = true,
+						GoldPots = {Count = 1},
+						Encounters = {
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'TimeElemental', Count = 3 },
+											{ Name = 'GoldElemental', Count = 10 },
+										},
+										SpawnOrder = {'TimeElemental', 'GoldElemental', 'TimeElemental', 'TimeElemental'}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					{
+						Name = 'I_Combat06',
+						IsFlipped = true,
+						Encounters = {
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'TimeElemental_Elite', Count = 3 },
+											{ Name = 'SatyrRatCatcher', Count = 1 },
+										},
+									},
+									{
+										Spawns = {
+											{ Name = 'SatyrRatCatcher', Count = 2 },
+										},
+									},
+								}
+							}
+						}
+					}
+				},
+				{
+					{
+						Name = 'I_Combat22',
+						IsForcedWell = true,
+						IsFlipped = true,
+						Encounters = {
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'SatyrLancer_Elite', Count = 2 },
+										},
+									},
+									{
+										Spawns = {
+											{ Name = 'SatyrLancer_Elite', Count = 1 },
+											{ Name = 'SatyrRatCatcher_Elite', Count = 1 },
+										},
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					{
+						Name = 'I_Combat01',
+						GoldPots = {Count = 1},
+						IsFlipped = true,
+						Encounters = {
+							{
+								SpawnWaves = {
+									{
+										Spawns = {
+											{ Name = 'SwarmerClockwork_Elite', Count = 4 },
+										},
+									},
+									{
+										Spawns = {
+											{ Name = 'SatyrLancer', Count = 1 },
+											{ Name = 'SwarmerClockwork_Elite', Count = 2 },
+										},
+									},
+									{
+										Spawns = {
+											{ Name = 'SwarmerClockwork_Elite', Count = 4 },
+											{ Name = 'TimeElemental_Elite', Count = 2 },
+											{ Name = 'GoldElemental', Count = 1 },
+										},
+									},
+									
+								}
+							}
+						}
+					},
+					{
+						Name = 'I_Story01',
+					},
+				},
+				{
+					{
+						Name = 'I_Combat04',
+						IsFlipped = true,
+						ForceFigSkipEncounterNumber = 1,
+						Encounters = {
+							{
+								-- Fig skipped
+							}
+						}
+					},
+					{
+						Name = 'I_MiniBoss01',
+						Rewards = {
+							{
+								Name = 'Boon',
+								BoonGod = 'Zeus',
+							}
+						},
+					},
+				},--]]
+				{
+					{
+						Name = 'I_PreBoss02',
+						ShopContent = {
+							-- from top to bottom: double health / random reward / Hera forte / Hermes (fort? 350po) / Nightmare
+							{
+								Reward = 'BoostedBoon',
+								BoonGod = 'Hera',
+								Traits = {
+									{
+										{ Name = 'Sprint', Rarity = 'Epic' },
+										{ Name = 'LinkedDeathDamage', Rarity = 'Rare' },
+										{ Name = 'ManaRestoreDamage', Rarity = 'Duo' },
+									}
+								},
+							},
+							{
+								Reward = 'RandomBoon',
+								BoonGod = 'Zeus',
+								Traits = {
+									{
+										{ Name = 'Sprint', Rarity = 'Epic' },
+										{ Name = 'ZeusManaBoltBoon', Rarity = 'Epic' },
+										{ Name = 'ElementalDamageFloor' },
+									},
+									{
+										{ Name = 'Sprint', Rarity = 'Common' },
+										{ Name = 'FocusLightning', Rarity = 'Common' },
+										{ Name = 'SuperSacrificeBoonZeus', Rarity = 'Duo' },
+									},
+								},
+							},
+							{ Reward = 'HealBigDrop'},
+							{
+								Reward = 'BoostedBoon',
+								BoonGod = 'Hermes',
+							},
+							{
+								Reward = 'WeaponPointsRareDrop',
+							},
+						}
+					},
+					{
+						Name = 'I_MiniBoss01',
+						Rewards = {
+							{
+								Name = 'Boon',
+								BoonGod = 'Hera',
+							}
+						},
+					},
+				},
+				{
+					{
+						Name = 'I_Boss01',
+						BossName = 'Chronos',
+						--BossParameter = '',
+					},
 				},
 			}
 		},

@@ -55,9 +55,16 @@ modutil.mod.Path.Wrap("ChooseEncounter", function(base, currentRun, room, args)
 	end
 end)
 
---
+-- Handle fig chance
 modutil.mod.Path.Wrap("HandleEnemySpawns", function(base, encounter)
 	MyHandleEnemySpawns(encounter)
+
+	return base(encounter)
+end)
+
+-- Handle fig chance
+modutil.mod.Path.Wrap("HandleEncounterPreSpawns", function(base, encounter)
+	MyHandleEncounterPreSpawns(encounter)
 
 	return base(encounter)
 end)
@@ -124,10 +131,9 @@ modutil.mod.Path.Wrap("SelectFieldsDoorCageCount", function(base, run, room)
 	local forcedFieldsRewardCount = getForcedFieldsRewardCount(room)
 
 	if forcedFieldsRewardCount then
+		room.MaxDoorDepthChanceTable = {} -- Ignore the in-game design
 		return forcedFieldsRewardCount
 	end
-
-	room.MaxDoorDepthChanceTable = {}
 
 	return base(run, room)
 end)
