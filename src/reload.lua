@@ -7,29 +7,25 @@
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
--- @finish foolish run:
--- handle Fields then the rest
--- Handle Tartarus
--- when redoing a compelte run, check that the ending postboss room actually stop the timer
+-- unrandomise the purging altar in inter-biome
 
-
--- @later:
+-- @improvements:
 -- Put Artemis/Athena traits in a more global scope since they can happen in multiple biome/room
--- Improve fields reward/encounter pairing, as currently they are not directly linked to each other
--- only load once the runparameters in RoomData
 -- unrandomise gathering spots and location
 -- unrandomise location pot of gold
 -- unrandomise enemies gold on death
 -- unrandomise cocoons content except the reward (ennemy, explode, money)
 -- Nyx apperance in chaos (via Empty_Chaos GameRequirements)
--- Forced Devotion Gods
 -- In oceanus, unrandomise hidden doors reward after clearing a wave
 -- Handle every Chaos curse/bless
--- unrandomise the purging altar in inter-biome
 -- unrandomise random pom affected boon
 -- handle that taking a Chaos in the fields does not advance the run position
--- Handle surface runs
 -- Selene spells order/moon phase
+-- Handle surface runs
+
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
 
 -- "Global" variables to handle the position in the run
 local GlobalIsPopulatedRooms
@@ -41,7 +37,7 @@ local GlobalRoomEncounterDepth
 --Force the generation of the Opening room
 function generateForcedOpeningRoom(currentRun, args)
 	--@todo handle not F starting Biome
-	local startingBiomeName = 'I'
+	local startingBiomeName = 'F'
 	local startingRoomData = game.RoomData[startingBiomeName .. '_1_1']
 
 	local startingRoom = game.CreateRoom(startingRoomData, args)
@@ -692,7 +688,6 @@ function MyRunStateInit()
 		GlobalIsPopulatedRooms = true
 
 		-- Change the requirements for the Chronos appearance when leaving I_Preboss
-		_print(game.ObstacleData.ChronosBossDoor.SetupEvents[3])
 		game.ObstacleData.ChronosBossDoor.SetupEvents[3].GameStateRequirements[1].Path = { "CurrentRun", "CurrentRoom", "BaseRoomName" }
 	end
 
@@ -717,6 +712,11 @@ function MyRunStateInit()
 			{ Name = "BoltRetaliateBoon",          Rarity = "Epic", },
 			{ Name = "AloneDamageBoon",            Rarity = "Epic", },
 			{ Name = "LuckyBoon",                  Rarity = "Heroic" },
+
+			{ Name = "ZeusSprintBoon",             Rarity = "Common", },
+			{ Name = "BurnExplodeBoon",            Rarity = "Common" },
+			{ Name = "OmegaHeraProjectileBoon",    Rarity = "Common" },
+
 			{ Name = "RoomRewardMaxHealthTrait", },
 			{ Name = "RoomRewardMaxHealthTrait", },
 			{ Name = "RoomRewardMaxHealthTrait", },
@@ -786,6 +786,31 @@ function getForcedFieldsRewardCount(currentRoom)
 	end
 
 	return nil
+end
+
+function MyGenerateSellTraitShop(currentRoom, args)
+	local roomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+
+	if roomParameters and roomParameters.PurgingAltarContent and roomParameters.PurgingAltarContent[1] then
+		args = args or {}
+		game.GenerateSellTraitValues( currentRoom, args )
+
+		currentRoom.SellOptions = {}
+		for _, content in pairs(roomParameters.PurgingAltarContent[1]) do
+			for _, sellValue in pairs(currentRoom.SellValues) do
+				if sellValue.Name == content.Name then
+					table.insert( currentRoom.SellOptions, {
+						Name = sellValue.Name,
+						Value = content.Value or sellValue.Value,
+						Rarity = sellValue.Rarity,
+					})
+					break
+				end
+			end
+		end
+
+		return currentRoom.SellOptions
+	end
 end
 
 function _getBiomeName(room)

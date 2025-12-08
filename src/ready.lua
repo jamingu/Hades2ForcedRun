@@ -156,8 +156,16 @@ modutil.mod.Path.Wrap("GetEligibleSpells", function(base, screen)
 	return MyGetEligibleSpells(screen)
 end)
 
+-- Force the purging altar
+modutil.mod.Path.Wrap("GenerateSellTraitShop", function(base, currentRoom, args)
+	local forcedTraits = MyGenerateSellTraitShop(currentRoom, args)
 
+	if forcedTraits then
+		return forcedTraits
+	end
 
+	return base(currentRoom, args)
+end)
 --------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------

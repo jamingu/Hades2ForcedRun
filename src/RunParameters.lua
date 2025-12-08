@@ -389,7 +389,6 @@ RunParameters = {
                 {
 					{
 						Name = 'F_PostBoss01',
-						IsForcedWell = true,
                         WellContent = {
 							{
 								{Name = 'ArmorBoostStore', Type = 'Consumable'},
@@ -406,7 +405,7 @@ RunParameters = {
 								{Name = 'LimitedManaRegenDrop', Type = 'Consumable'},
 								{Name = 'TemporaryImprovedExTrait', Type = 'Trait'},
 							},
-						},
+						}
 					}
 				},
 			}
@@ -630,7 +629,6 @@ RunParameters = {
 				{
 					{
 						Name = 'G_PostBoss01',
-						IsForcedWell = true,
                     	WellContent = {
 							{
 								{Name = 'FirstHitHealTrait', Type = 'Trait'},
@@ -936,7 +934,6 @@ RunParameters = {
 				{
 					{
 						Name = 'H_PostBoss01',
-						IsForcedWell = true,
                     	WellContent = {
 							{
 								{Name = 'TemporaryDoorHealTrait', Type = 'Trait'},
@@ -944,13 +941,20 @@ RunParameters = {
 								{Name = 'TemporaryDiscountTrait', Type = 'Trait'},
 							},
 						},
+						PurgingAltarContent = {
+							{
+								{Name = 'BurnExplodeBoon', Value = 45},
+								{Name = 'ZeusSprintBoon', Value = 35},
+								{Name = 'OmegaHeraProjectileBoon', Value = 45},
+							},
+						}
 					}
 				}
 			}
 		},
 		I = {
 			Rooms = {
-				--[[{
+				{
 					{
 						Name = 'I_Intro',
 						Encounter = 'Empty',
@@ -1079,7 +1083,7 @@ RunParameters = {
 							}
 						},
 					},
-				},--]]
+				},
 				{
 					{
 						Name = 'I_PreBoss02',
