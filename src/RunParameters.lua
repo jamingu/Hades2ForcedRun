@@ -105,14 +105,7 @@ RunParameters = {
 						Name = 'F_Combat10',
 						Rewards = {
 							{
-								Name = 'Pom',
-								Traits = {
-									{
-										{ Name = 'HeraWeaponBoon' },
-										{ Name = 'HeraSpecialBoon' },
-										{ Name = 'AloneDamageBoon' },
-									},
-								}
+								Name = 'Pom'
 							}
 						},
 					},
@@ -295,15 +288,15 @@ RunParameters = {
 					{
 						Name = 'F_Reprieve01',
 						Rewards = {
-							{ Name = 'Pom' }
+							{ Name = 'MaxManaDrop' }
 						},
 					},
 					{
 						Name = 'F_Reprieve01',
 						Rewards = {
-							{ Name = 'MaxManaDrop' }
+							{ Name = 'Pom' }
 						},
-					}
+					},
 				},
 				{
 					{
@@ -458,8 +451,8 @@ RunParameters = {
 					},
 					{
 						Name = 'G_Shop01',
-						IsNemesisForced = false,
 						IsZagreusForced = true,
+						IsNemesisForced = false,
 						IsFlipped = true,
 						ShopContent = {
 							{ Reward = 'Boon', BoonGod = 'Aphrodite' },
@@ -469,6 +462,12 @@ RunParameters = {
 					},
 				},
 				{
+					{
+						Name = 'G_MiniBoss03',
+						Rewards = {
+							{ Name = 'Boon', BoonGod = 'Hestia' }
+						}
+					},
 					{
 						Name = 'G_MiniBoss03',
 						Rewards = {
@@ -494,12 +493,7 @@ RunParameters = {
 							}
 						}
 					},
-					{
-						Name = 'G_MiniBoss03',
-						Rewards = {
-							{ Name = 'Boon', BoonGod = 'Hestia' }
-						}
-					},
+					
 				},
 				{
 					{
@@ -658,12 +652,19 @@ RunParameters = {
 							},
 							{
 								Name = 'Pom',
-								LocationKeyId = '1',
+								LocationKeyId = 1,
+								Traits = {
+									{
+										{ Name = 'HeraWeaponBoon' },
+										{ Name = 'HeraSpecialBoon' },
+										{ Name = 'AloneDamageBoon' },
+									},
+								}
 							},
 							{
 								Name = 'Boon',
 								BoonGod = 'Hermes',
-								LocationKeyId = '2',
+								LocationKeyId = 2,
 								Traits = {
 									--The first traits are in dublon because they are rolled twice because the pom is taken first
 									--and rewards are rerolled in the fields if they are not taken first (via CreateBoonLootButtons, one of the check is false and call SetTraitsOnLoot)

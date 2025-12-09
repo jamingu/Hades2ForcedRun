@@ -561,6 +561,9 @@ function MyHandleEnemySpawns(encounter)
 end
 
 function MyStartRoom(currentRun, room)
+
+		rom.log.warning(currentRun.BiomeDepthCache)
+
 	local currentRoom = room
 
 	-- Set the "Global" variables of the current position in the run
@@ -1121,7 +1124,6 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 			--enemy.PreferredSpawnPoint = nil
 			for _, spawnOnIdKey in pairs(spawnOnIdKeys) do
 				if spawnOnIdKey and baseMapSpawnPoints[spawnOnIdKey] then
-					rom.log.warning((enemy.Name or 'nil enemy') .. ' final => ' .. baseMapSpawnPoints[spawnOnIdKey])
 					return baseMapSpawnPoints[spawnOnIdKey]
 				end
 			end
@@ -1487,8 +1489,9 @@ function MySpawnRewardCages(room, args)
 
 	local rewardSpawnPoints = game.GetIdsByType({ Name = "LootPoint" })
 	table.sort( rewardSpawnPoints )
-	for index, cageReward in ipairs( room.CageRewards ) do
 
+	_print(rewardSpawnPoints)
+	for index, cageReward in ipairs( room.CageRewards ) do
 		local spawnPointId
 		if currentRoomParameters then
 			for _,rewardParameters in pairs(currentRoomParameters.Rewards) do
@@ -1498,6 +1501,8 @@ function MySpawnRewardCages(room, args)
 					if cageReward.RewardType == 'Boon' and rewardParameters.Name == 'Boon' then
 						rewardFound = true
 					elseif cageReward.RewardType == 'SpellDrop' and rewardParameters.Name == 'Boon' and rewardParameters.BoonGod == 'Selene' then
+						rewardFound = true
+					elseif cageReward.RewardType == 'StackUpgrade' and rewardParameters.Name == 'Pom' then
 						rewardFound = true
 					elseif cageReward.RewardType == rewardParameters.Name then
 						rewardFound = true
