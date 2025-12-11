@@ -219,3 +219,13 @@ end)
 modutil.mod.Path.Wrap("ApplyScyllaFightSpotlight", function(base, scylla, args)
 	return MyApplyScyllaFightSpotlight(scylla, args)
 end)
+
+-- Arachne costume choice
+modutil.mod.Path.Wrap("NarcissusBenefitChoice", function(base, source, args, screen)
+	--MyNarcissusBenefitChoice(source, args, screen)
+	
+	local tmp = base(source, args, screen)
+
+	_print(source.UpgradeOptions)
+	return tmp
+end)

@@ -77,7 +77,7 @@ function generateForcedNextRoomData(currentRun, args, otherDoors)
 			local nextRoomDepth
 			if keys.BiomeName == 'Chaos' then
 				biomeName = GlobalCurrentBiomeName
-				nextRoomDepth = currentRun.BiomeDepthCache + 1
+				nextRoomDepth = GlobalRoomDepth + 2
 			else
 				biomeName = keys.BiomeName
 				-- Retrieve the next non-generated room at one depth below
@@ -244,6 +244,9 @@ function generateForcedEncounterData(currentRun, room, args)
 				if encounter.SpawnWaves ~= nil  then
 					local createdSpawnWaves = {}
 					local waveCount = 0
+
+					createdEncounterData = game.DeepCopyTable(game.EncounterData[encounterName])
+
 					for spawnWaveKey, spawnWaveValues in pairs(encounter.SpawnWaves) do
 						-- init
 						createdSpawnWaves[spawnWaveKey] = {
@@ -260,19 +263,23 @@ function generateForcedEncounterData(currentRun, room, args)
 								CountMax = spawnValue.Count,
 								SpawnOnIdKeys = spawnValue.SpawnOnIdKeys,
 							}
+
+							-- Handle raising the cap for certain monsters
+							if game.EnemyData[spawnValue.Name].GeneratorData ~= nil and game.EnemyData[spawnValue.Name].GeneratorData.ActiveEnemyCapBonus ~= nil then
+								createdEncounterData.ActiveEnemyCapBonus = createdEncounterData.ActiveEnemyCapBonus or 0
+								createdEncounterData.ActiveEnemyCapBonus = createdEncounterData.ActiveEnemyCapBonus + game.EnemyData[spawnValue.Name].GeneratorData.ActiveEnemyCapBonus
+							end
 						end
 					end
 
-					createdEncounterData = game.DeepCopyTable(game.EncounterData[encounterName])
 					createdEncounterData.SpawnWaves = createdSpawnWaves
 					createdEncounterData.MinWaves = waveCount
 					createdEncounterData.MaxWaves = waveCount
-
-					local averageSpawnInterval = (createdEncounterData.SpawnIntervalMax + createdEncounterData.SpawnIntervalMin)/2
-					createdEncounterData.SpawnIntervalMin = averageSpawnInterval
-					createdEncounterData.SpawnIntervalMax = averageSpawnInterval
+					createdEncounterData.SpawnIntervalMax = createdEncounterData.SpawnIntervalMin
+					createdEncounterData.MoneyDropCapMin = createdEncounterData.MoneyDropCapMax
+					createdEncounterData.MinWaves = createdEncounterData.MaxWaves
 				end
-				
+
 				break
 			end
 		end
@@ -406,13 +413,19 @@ function generateForcedBoonRewardTraits(lootData)
 end
 
 function generateForcedHammerRewardTraits()
-	local currentRoom = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+	local currentRoomParameters = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
 
 	local forcedTraits = nil
 	-- If a BoonTraits parameter exists (room or shop), force it
-	if currentRoom and currentRoom.Traits then
+	if currentRoomParameters and currentRoomParameters.Rewards then
 		-- Standard Room reward
-		forcedTraits = currentRoom.Traits
+		for k,reward in pairs(currentRoomParameters.Rewards) do
+			if reward.Traits then
+				rom.log.warning('forced hamer traits')
+				forcedTraits = reward.Traits
+				break
+			end
+		end
 	elseif currentRoom and currentRoom.ShopContent then
 		-- Shop option
 		for k, shopElement in pairs(currentRoom.ShopContent) do
@@ -561,9 +574,6 @@ function MyHandleEnemySpawns(encounter)
 end
 
 function MyStartRoom(currentRun, room)
-
-		rom.log.warning(currentRun.BiomeDepthCache)
-
 	local currentRoom = room
 
 	-- Set the "Global" variables of the current position in the run
@@ -571,8 +581,9 @@ function MyStartRoom(currentRun, room)
 	if keys.BiomeName ~= 'Chaos' then
 		-- Keep the current "real" biomeName
 		GlobalCurrentBiomeName = keys.BiomeName
+		GlobalRoomDepth = keys.RoomDepth
 	end
-	GlobalRoomDepth = keys.RoomDepth
+	
 	GlobalRoomNumber = keys.RoomNumber
 	GlobalRoomEncounterDepth = 1
 
@@ -668,7 +679,6 @@ function getForcedRoomRewards(run, room, setRewardIsGenerated)
 						},
 					}
 				end
-
 				break
 			end
 		end
@@ -705,37 +715,21 @@ function MyRunStateInit()
 	if not debugTraitsGiven and not game.CurrentHubRoom and game.CurrentRun and game.CurrentRun.CurrentRoom and game.SessionMapState then
 		StartingTraits =
 		{
-			{ Name = "AresWeaponBoon",             Rarity = "Epic", },
-			{ Name = "ZeusSpecialBoon",            Rarity = "Epic", },
-			{ Name = "ZeusManaBoon",               Rarity = "Epic", },
-			{ Name = "AresStatusDoubleDamageBoon", Rarity = "Epic", },
-			{ Name = "AloneDamageBoon",            Rarity = "Epic", },
-			{ Name = "RendBloodDropBoon",          Rarity = "Epic", },
-			{ Name = "FocusLightningBoon",         Rarity = "Epic", },
-			{ Name = "BoltRetaliateBoon",          Rarity = "Epic", },
-			{ Name = "AloneDamageBoon",            Rarity = "Epic", },
-			{ Name = "LuckyBoon",                  Rarity = "Heroic" },
+			{ Name = "PoseidonCastBoon",             Rarity = "Epic", },
+			{ Name = "ApolloSpecialBoon",             Rarity = "Epic", },
+			{ Name = "CastNovaBoon",             Rarity = "Epic", },
+			{ Name = "SpawnCastDamageBoon",             Rarity = "Epic", },
+			{ Name = "HighHealthCritBoon",             Rarity = "Epic", },
+			{ Name = "ApolloSprintBoon",             Rarity = "Epic", },
 
-			{ Name = "ZeusSprintBoon",             Rarity = "Common", },
-			{ Name = "BurnExplodeBoon",            Rarity = "Common" },
-			{ Name = "OmegaHeraProjectileBoon",    Rarity = "Common" },
+			{ Name = "ChaosExSpeedBlessing",             Rarity = "Epic", },
+			{ Name = "ChaosCastBlessing",             Rarity = "Epic", },
 
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxHealthTrait", },
-			{ Name = "RoomRewardMaxManaTrait", },
-			{ Name = "RoomRewardMaxManaTrait", },
-			{ Name = "RoomRewardMaxManaTrait", },
-			{ Name = "RoomRewardMaxManaTrait", },
-			{ Name = "RoomRewardMaxManaTrait", },
+			{ Name = "AxeSecondStageTrait", },
+			
+			{ Name = "AgilityCostume" },
+			
+			-- Simulate arcana "+ max mana every 3 rooms"
 			{ Name = "RoomRewardMaxManaTrait", },
 		}
 
@@ -940,8 +934,7 @@ function _populateRoomData(biomeName, roomDepth, roomNumber)
 	createdRoomData.WellContent = roomParameters.WellContent
 	createdRoomData.WellSpawnOnIdKey = roomParameters.WellSpawnOnIdKey
 	createdRoomData.Flipped = roomParameters.IsFlipped or false
-
-	-- Boss Name/Parameter
+		-- Boss Name/Parameter
 	createdRoomData.BossName = roomParameters.BossName
 	createdRoomData.BossParameter = roomParameters.BossParameter
 
@@ -955,7 +948,7 @@ function _populateRoomData(biomeName, roomDepth, roomNumber)
 	-- Force the Fields starting point, from the starting points: 621442, 723141, 723145
 	-- @todo: improve this to be handled with a key and not the value directly
 	if roomParameters.StartPoint then
-		createdRoomData.DebugHeroStartPoint = roomParameters.StartPoint 
+		createdRoomData.DebugHeroStartPoint = roomParameters.StartPoint
 	end
 
 	-- Set a Unique RoomData name, and add it to the global variables list of rooms
@@ -1686,4 +1679,25 @@ function MyGetEligibleSpells(screen)
 	end
 
 	return eligibleSpells
+end
+
+function MyNarcissusBenefitChoice( source, args, screen )
+	--@modified, no more randomness
+	local currentRoom = _getParametersRoomFromName(game.CurrentRun.CurrentRoom.Name)
+
+	if currentRoom and currentRoom.Traits then
+		isForcedTrait = true
+		source.UpgradeOptions = {}
+		for k, traitName in pairs(currentRoom.Traits) do
+			table.insert(source.UpgradeOptions, {
+				ItemName = traitName,
+				Type = 'Trait',
+				Rarity = 'Common'
+			})
+		end
+	end
+
+	args.UpgradeOptions = {}
+
+	return
 end
