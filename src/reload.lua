@@ -37,7 +37,7 @@ local GlobalRoomEncounterDepth
 --Force the generation of the Opening room
 function generateForcedOpeningRoom(currentRun, args)
 	--@todo handle not F starting Biome
-	local startingBiomeName = 'F'
+	local startingBiomeName = 'H'
 	local startingRoomData = game.RoomData[startingBiomeName .. '_1_1']
 
 	local startingRoom = game.CreateRoom(startingRoomData, args)
@@ -687,7 +687,7 @@ function getForcedRoomRewards(run, room, setRewardIsGenerated)
 	return forcedRewards
 end
 
-local debugTraitsGiven = true
+local debugTraitsGiven = false
 function MyRunStateInit()
 	-- Load every Rooms from the RunParameters, only once
 	if not GlobalIsPopulatedRooms then
@@ -713,24 +713,28 @@ function MyRunStateInit()
 
 	-- For debugging, add traits
 	if not debugTraitsGiven and not game.CurrentHubRoom and game.CurrentRun and game.CurrentRun.CurrentRoom and game.SessionMapState then
+		rom.log.warning('give')
 		StartingTraits =
 		{
+			-- Erebus
 			{ Name = "PoseidonCastBoon",             Rarity = "Epic", },
 			{ Name = "ApolloSpecialBoon",             Rarity = "Epic", },
 			{ Name = "CastNovaBoon",             Rarity = "Epic", },
 			{ Name = "SpawnCastDamageBoon",             Rarity = "Epic", },
 			{ Name = "HighHealthCritBoon",             Rarity = "Epic", },
 			{ Name = "ApolloSprintBoon",             Rarity = "Epic", },
-
 			{ Name = "ChaosExSpeedBlessing",             Rarity = "Epic", },
 			{ Name = "ChaosCastBlessing",             Rarity = "Epic", },
-
 			{ Name = "AxeSecondStageTrait", },
-			
 			{ Name = "AgilityCostume" },
-			
-			-- Simulate arcana "+ max mana every 3 rooms"
 			{ Name = "RoomRewardMaxManaTrait", },
+			-- Oceanus
+			{ Name = "CastNovaBoon",             Rarity = "Epic", },
+			{ Name = "DoubleExManaBoon",             Rarity = "Legendary", },
+			{ Name = "HermesSpecialBoon",             Rarity = "Epic", },
+			{ Name = "PoseidonExCastBoon",             Rarity = "Epic", },
+			{ Name = "ChaosSpecialBlessing",             Rarity = "Epic", },
+			{ Name = "HeraManaBoon",             Rarity = "Epic", },
 		}
 
 		for i, traitData in ipairs(StartingTraits) do
@@ -1108,7 +1112,6 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 	end
 
 	if spawnOnIdKeys then
-		local newSpawnPointIds = {}
 		local baseMapSpawnPoints = _getSortedCopy(game.MapState.SpawnPoints)
 
 		-- Force the spawn point
@@ -1120,8 +1123,6 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 					return baseMapSpawnPoints[spawnOnIdKey]
 				end
 			end
-
-			shuffledSpawnPointIds = newSpawnPointIds
 		end
 	end
 
@@ -1163,6 +1164,10 @@ function MySelectSpawnPoint(currentRoom, enemy, encounter, args, depth)
 			if args.CycleSpawnPoints then
 				RemoveValueAndCollapse(MapState.CyclingSpawnPoints, id)
 			end
+
+			rom.log.warning('spawn Id ')
+			rom.log.warning(id)
+			rom.log.warning(k)
 
 			return id
 		end
@@ -1496,6 +1501,8 @@ function MySpawnRewardCages(room, args)
 					elseif cageReward.RewardType == 'SpellDrop' and rewardParameters.Name == 'Boon' and rewardParameters.BoonGod == 'Selene' then
 						rewardFound = true
 					elseif cageReward.RewardType == 'StackUpgrade' and rewardParameters.Name == 'Pom' then
+						rewardFound = true
+					elseif cageReward.RewardType == 'WeaponUpgrade' and rewardParameters.Name == 'Hammer' then
 						rewardFound = true
 					elseif cageReward.RewardType == rewardParameters.Name then
 						rewardFound = true

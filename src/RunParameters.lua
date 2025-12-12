@@ -476,7 +476,6 @@ RunParameters = {
 										{ Name = 'PoseidonExCast', Rarity = 'Epic' },
 										{ Name = 'DoubleRewardBoon', Rarity = 'Common' },
 									},
-									
 								},
 							},
 							{ Reward = 'HealDropMajor' },
@@ -519,7 +518,7 @@ RunParameters = {
 		},
 		H = {
 			Rooms = {
-				{
+				--[[{
 					{
 						Name = 'H_Intro',
 						Encounter = 'Empty',
@@ -532,13 +531,9 @@ RunParameters = {
 						Rewards = {
 							{},
 							{
-								Name = 'Pom',
-								LocationKeyId = 1,
-							},
-							{
 								Name = 'Boon',
 								BoonGod = 'Hermes',
-								LocationKeyId = 2,
+								LocationKeyId = 1,
 								Traits = {
 									{
 										{ Name = 'LuckyBoon', Rarity = 'Epic' },
@@ -551,11 +546,14 @@ RunParameters = {
 										{ Name = 'TimedKillBuff', Rarity = 'Common' },
 									},
 								},
-							}
+							},
+							{
+								Name = 'Pom',
+								LocationKeyId = 2,
+							},
 						},
 						FieldsBonusRewards = {
 							{ Name = 'MaxManaDropSmall', LocationKeyId = 1, },
-							{ Name = 'RoomMoneyTinyDrop', LocationKeyId = 2, },
 						},
 						FieldsRewardsCount = 2,
 						Encounters = {
@@ -573,8 +571,8 @@ RunParameters = {
 								SpawnWaves = {
 									{
 										Spawns = {
-											{ Name = 'Mourner', Count = 3, },
-											{ Name = 'BrokenHearted', Count = 1, },
+											{ Name = 'Mourner', Count = 3, SpawnOnIdKeys = {6,7,8} },
+											{ Name = 'BrokenHearted', Count = 1, SpawnOnIdKeys = {9} },
 										},
 										SpawnOrder = {'Mourner', 'Mourner', 'Mourner', 'BrokenHearted' }
 									}
@@ -584,8 +582,8 @@ RunParameters = {
 								SpawnWaves = {
 									{
 										Spawns = {
-											{ Name = 'Mourner', Count = 2, },
-											{ Name = 'Lamia', Count = 3, },
+											{ Name = 'Mourner', Count = 2, SpawnOnIdKeys = {25,26} },
+											{ Name = 'Lamia', Count = 3, SpawnOnIdKeys = {27,28,29} },
 										},
 										SpawnOrder = {'Mourner', 'Mourner', 'Lamia', 'Lamia', 'Lamia'}
 									}
@@ -593,7 +591,7 @@ RunParameters = {
 							},
 						},
 					}
-				},
+				},--]]
 				{
 					{
 						Name = 'H_MiniBoss02',
@@ -612,12 +610,13 @@ RunParameters = {
 						},
 					},
 					{
-						Name = 'H_Combat01',
+						Name = 'H_MiniBoss01',
 						Rewards = {
-							{ Name = 'RoomMoneyDrop' },
-							{ Name = 'MaxHealthDrop' },
-						},
-						FieldsRewardsCount = 2,
+							{
+								Name = 'Boon',
+								BoonGod = 'Demeter',
+							}
+						}
 					}
 				},
 				{
@@ -626,19 +625,13 @@ RunParameters = {
 						Encounter = 'Story_Echo_01',
 						Traits = { 'EchoRepeatKeepsakeBoon', 'EchoDoubleLevelBoon', 'EchoLastReward'},
 					},
-					-- There's need to be a room here or the game bugs, even though it should not be generated ...
-					--[[{
-						Name = 'H_Combat01',
-						FieldsRewardsCount = 2,
-					}]]
 				},
 				{
 					{
 						Name = 'H_Combat01',
-						FieldsRewardsCount = 3,
+						FieldsRewardsCount = 2,
 						Rewards = {
 							{},
-							{ Name = 'Pom' },
 							{ Name = 'RoomMoneyDrop' },
 							{ Name = 'MaxHealthDrop' },
 						}
@@ -646,9 +639,14 @@ RunParameters = {
 					{
 						Name = 'H_Combat12',
 						FieldsRewardsCount = 2,
-						ForceFigSkipEncounterNumber = 2,
+						ForceFigSkipEncounterNumber = 3,
 						Rewards = {
 							{},
+							{
+								Name = 'Hammer',
+								Traits = { 'AxeChargedSpecialTrait', 'AxeMassiveThirdStrikeTrait', 'AxeRangedWhirlwindTrait' },
+								LocationKeyId = 1
+							},
 							{
 								Name = 'Boon',
 								BoonGod = 'Apollo',
@@ -659,13 +657,8 @@ RunParameters = {
 										{ Name = 'FocusLightning', Rarity = 'Common' },
 									},
 								},
-								LocationKeyId = 1
-							},
-							{
-								Name = 'Hammer',
-								Traits = { 'AxeChargedSpecialTrait', 'AxeMassiveThirdStrikeTrait', 'AxeRangedWhirlwindTrait' },
 								LocationKeyId = 2
-							 },
+							},
 						},
 						FieldsBonusRewards = {
 							{ Name = 'GiftDrop', LocationKeyId = 1 },
@@ -686,8 +679,8 @@ RunParameters = {
 								SpawnWaves = {
 									{
 										Spawns = {
-											{ Name = 'Treant2', Count = 1 },
-											{ Name = 'FogEmitter2', Count = 1 },
+											{ Name = 'Treant2', Count = 1, SpawnOnIdKeys = {165} },
+											{ Name = 'FogEmitter2', Count = 1, SpawnOnIdKeys = {179} },
 											
 										},
 										SpawnOrder = {'Treant2', 'FogEmitter2'}
@@ -731,11 +724,6 @@ RunParameters = {
 							{ Name = 'MaxManaDrop' }
 						},
 					},
-					-- There's need to be a room here or the game bugs, even though it should not be generated ...
-					--[[{
-						Name = 'H_Combat14',
-						FieldsRewardsCount = 2,
-					}]]
 				},
 				{
 					{
@@ -743,11 +731,6 @@ RunParameters = {
 						BossName = 'Cerberus',
 						BossParameter = 'CerberusSpawns02',
 					},
-					-- There's need to be a room here or the game bugs, even though it should not be generated ...
-					--[[{
-						Name = 'H_Combat14',
-						FieldsRewardsCount = 2,
-					}]]
 				},
 				{
 					{
